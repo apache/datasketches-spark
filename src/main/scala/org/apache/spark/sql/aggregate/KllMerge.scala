@@ -31,9 +31,7 @@ import org.apache.datasketches.memory.Memory
  * The KllDoublesMergeAgg function utilizes a Datasketches KllDoublesSketch instance to
  * combine multiple sketches into a single sketch.
  *
- * See [[https://datasketches.apache.org/docs/HLL/HLL.html]] for more information.
- *
- * @param child child expression against which unique counting will occur
+ * @param child child expression against which the sketch will be created
  */
 // scalastyle:off line.size.limit
 @ExpressionDescription(

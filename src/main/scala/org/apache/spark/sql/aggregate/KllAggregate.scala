@@ -30,8 +30,8 @@ import org.apache.spark.sql.types.{AbstractDataType, DataType, IntegerType, Long
  * to create a sketch from a column of values which can be used to estimate quantiles
  * and histograms.
  *
- * @param child child expression against which unique counting will occur
- * @param k the size-accraucy trade-off parameter for the sketch
+ * @param child child expression against which the sketch will be created
+ * @param k the size-accuracy trade-off parameter for the sketch
  */
 // scalastyle:off line.size.limit
 @ExpressionDescription(

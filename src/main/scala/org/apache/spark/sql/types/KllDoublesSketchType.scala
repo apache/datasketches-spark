@@ -17,7 +17,9 @@
 
 package org.apache.spark.sql.types
 
-class KllDoublesSketchType extends UserDefinedType[KllDoublesSketchWrapper] {
+import org.apache.spark.sql.functions.udf
+
+class KllDoublesSketchType extends UserDefinedType[KllDoublesSketchWrapper] with Serializable {
   override def sqlType: DataType = DataTypes.BinaryType
 
   override def serialize(wrapper: KllDoublesSketchWrapper): Array[Byte] = {
@@ -34,4 +36,13 @@ class KllDoublesSketchType extends UserDefinedType[KllDoublesSketchWrapper] {
   override def catalogString: String = "KllDoublesSketch"
 }
 
-case object KllDoublesSketchType extends KllDoublesSketchType
+case object KllDoublesSketchType extends KllDoublesSketchType {
+  // udf to allow importing serialized sketches into dataframes
+  val wrapBytes = udf((bytes: Array[Byte]) => {
+    if (bytes == null) {
+      null
+    } else {
+      deserialize(bytes)
+    }
+  })
+}

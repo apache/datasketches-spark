@@ -23,7 +23,7 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.{ExpectsInputTypes, Expression, ExpressionDescription, Literal}
 import org.apache.spark.sql.catalyst.expressions.aggregate.TypedImperativeAggregate
 import org.apache.spark.sql.catalyst.trees.BinaryLike
-import org.apache.spark.sql.types.{AbstractDataType, DataType, IntegerType, LongType, NumericType, FloatType, DoubleType, KllDoublesSketchWrapper, KllDoublesSketchType}
+import org.apache.spark.sql.types.{AbstractDataType, DataType, IntegerType, LongType, NumericType, FloatType, DoubleType, KllDoublesSketchType}
 
 /**
  * The KllDoublesSketchAgg function utilizes a Datasketches KllDoublesSketch instance
@@ -50,7 +50,6 @@ case class KllDoublesSketchAgg(
     right: Expression,
     mutableAggBufferOffset: Int = 0,
     inputAggBufferOffset: Int = 0)
-  //extends TypedImperativeAggregate[KllDoublesSketchWrapper]
   extends TypedImperativeAggregate[KllDoublesSketch]
     with BinaryLike[Expression]
     with ExpectsInputTypes {
@@ -80,7 +79,6 @@ case class KllDoublesSketchAgg(
   }
 
   // Copy constructors
-
   override def withNewMutableAggBufferOffset(newMutableAggBufferOffset: Int): KllDoublesSketchAgg =
     copy(mutableAggBufferOffset = newMutableAggBufferOffset)
 
@@ -102,21 +100,13 @@ case class KllDoublesSketchAgg(
   override def inputTypes: Seq[AbstractDataType] = Seq(NumericType, IntegerType, LongType, FloatType, DoubleType)
 
   // create buffer
-  //override def createAggregationBuffer(): KllDoublesSketchWrapper = new KllDoublesSketchWrapper(KllDoublesSketch.newHeapInstance(k))
   override def createAggregationBuffer(): KllDoublesSketch = KllDoublesSketch.newHeapInstance(k)
 
   // update
-  //override def update(wrapper: KllDoublesSketchWrapper, input: InternalRow): KllDoublesSketchWrapper = {
-    override def update(sketch: KllDoublesSketch, input: InternalRow): KllDoublesSketch = {
+  override def update(sketch: KllDoublesSketch, input: InternalRow): KllDoublesSketch = {
     val value = left.eval(input)
     if (value != null) {
       left.dataType match {
-/*
-        case DoubleType => wrapper.sketch.update(value.asInstanceOf[Double])
-        case FloatType => wrapper.sketch.update(value.asInstanceOf[Float].toDouble)
-        case IntegerType => wrapper.sketch.update(value.asInstanceOf[Int].toDouble)
-        case LongType => wrapper.sketch.update(value.asInstanceOf[Long].toDouble)
-*/
         case DoubleType => sketch.update(value.asInstanceOf[Double])
         case FloatType => sketch.update(value.asInstanceOf[Float].toDouble)
         case IntegerType => sketch.update(value.asInstanceOf[Int].toDouble)
@@ -126,32 +116,18 @@ case class KllDoublesSketchAgg(
           Map("dataType" -> dataType.toString))
       }
     }
-    //wrapper
     sketch
   }
 
   // union (merge)
-  //override def merge(wrapper: KllDoublesSketchWrapper, other: KllDoublesSketchWrapper): KllDoublesSketchWrapper = {
-    override def merge(sketch: KllDoublesSketch, other: KllDoublesSketch): KllDoublesSketch = {
-    //if (other != null && !other.sketch.isEmpty) {
+  override def merge(sketch: KllDoublesSketch, other: KllDoublesSketch): KllDoublesSketch = {
     if (other != null && !other.isEmpty) {
-      //wrapper.sketch.merge(other.sketch)
       sketch.merge(other)
     }
-    //wrapper
     sketch
   }
 
   // eval
-  /*
-  override def eval(wrapper: KllDoublesSketchWrapper): Any = {
-    if (wrapper == null || wrapper.sketch.isEmpty) {
-      null
-    } else {
-      wrapper.toByteArray
-    }
-  }
-    */
   override def eval(sketch: KllDoublesSketch): Any = {
     if (sketch == null || sketch.isEmpty) {
       null
@@ -160,12 +136,10 @@ case class KllDoublesSketchAgg(
     }
   }
 
-  //override def serialize(wrapper: KllDoublesSketchWrapper): Array[Byte] = {
-  override def serialize(wrapper: KllDoublesSketch): Array[Byte] = {
-    KllDoublesSketchType.serialize(wrapper)
+  override def serialize(sketch: KllDoublesSketch): Array[Byte] = {
+    KllDoublesSketchType.serialize(sketch)
   }
 
-  //override def deserialize(bytes: Array[Byte]): KllDoublesSketchWrapper = {
   override def deserialize(bytes: Array[Byte]): KllDoublesSketch = {
     KllDoublesSketchType.deserialize(bytes)
   }

@@ -49,7 +49,6 @@ class KllTest extends SparkSessionManager {
     for (i <- 1 to numClass) yield {
       val sk = KllDoublesSketch.newHeapInstance(200)
       for (j <- 0 until numSamples) sk.update(Random.nextDouble)
-      //dataList.add(Row(i, KllDoublesSketchType.create(sk)))
       dataList.add(Row(i, sk))
     }
 

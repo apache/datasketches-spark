@@ -18,25 +18,43 @@
 package org.apache.spark.sql.types
 
 import org.apache.spark.sql.functions.udf
+import org.apache.datasketches.kll.KllDoublesSketch
+import org.apache.datasketches.memory.Memory
 
-class KllDoublesSketchType extends UserDefinedType[KllDoublesSketchWrapper] with Serializable {
+//class KllDoublesSketchType extends UserDefinedType[KllDoublesSketchWrapper] with Serializable {
+class KllDoublesSketchType extends UserDefinedType[KllDoublesSketch] with Serializable {
   override def sqlType: DataType = DataTypes.BinaryType
 
-  override def serialize(wrapper: KllDoublesSketchWrapper): Array[Byte] = {
+  //override def serialize(wrapper: KllDoublesSketchWrapper): Array[Byte] = {
+    override def serialize(wrapper: KllDoublesSketch): Array[Byte] = {
     wrapper.toByteArray
   }
 
+/*
   override def deserialize(data: Any): KllDoublesSketchWrapper = {
     val bytes = data.asInstanceOf[Array[Byte]]
     KllDoublesSketchWrapper.deserialize(bytes)
   }
+*/
+  override def deserialize(data: Any): KllDoublesSketch = {
+    val bytes = data.asInstanceOf[Array[Byte]]
+    KllDoublesSketch.heapify(Memory.wrap(bytes))
+  }
 
-  override def userClass: Class[KllDoublesSketchWrapper] = classOf[KllDoublesSketchWrapper]
+  //override def userClass: Class[KllDoublesSketchWrapper] = classOf[KllDoublesSketchWrapper]
+  override def userClass: Class[KllDoublesSketch] = classOf[KllDoublesSketch]
 
   override def catalogString: String = "KllDoublesSketch"
 }
 
 case object KllDoublesSketchType extends KllDoublesSketchType {
+  UDTRegistration.register(classOf[KllDoublesSketch].getName(), classOf[KllDoublesSketchType].getName())
+
+  // function to create a KllDoublesSketchWrapper from a regular sketch
+  val create = (sketch: KllDoublesSketch) => {
+    KllDoublesSketchWrapper(sketch)
+  }
+
   // udf to allow importing serialized sketches into dataframes
   val wrapBytes = udf((bytes: Array[Byte]) => {
     if (bytes == null) {

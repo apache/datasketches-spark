@@ -50,7 +50,8 @@ case class KllDoublesSketchAgg(
     right: Expression,
     mutableAggBufferOffset: Int = 0,
     inputAggBufferOffset: Int = 0)
-  extends TypedImperativeAggregate[KllDoublesSketchWrapper]
+  //extends TypedImperativeAggregate[KllDoublesSketchWrapper]
+  extends TypedImperativeAggregate[KllDoublesSketch]
     with BinaryLike[Expression]
     with ExpectsInputTypes {
 
@@ -101,34 +102,48 @@ case class KllDoublesSketchAgg(
   override def inputTypes: Seq[AbstractDataType] = Seq(NumericType, IntegerType, LongType, FloatType, DoubleType)
 
   // create buffer
-  override def createAggregationBuffer(): KllDoublesSketchWrapper = new KllDoublesSketchWrapper(KllDoublesSketch.newHeapInstance(k))
+  //override def createAggregationBuffer(): KllDoublesSketchWrapper = new KllDoublesSketchWrapper(KllDoublesSketch.newHeapInstance(k))
+  override def createAggregationBuffer(): KllDoublesSketch = KllDoublesSketch.newHeapInstance(k)
 
   // update
-  override def update(wrapper: KllDoublesSketchWrapper, input: InternalRow): KllDoublesSketchWrapper = {
+  //override def update(wrapper: KllDoublesSketchWrapper, input: InternalRow): KllDoublesSketchWrapper = {
+    override def update(sketch: KllDoublesSketch, input: InternalRow): KllDoublesSketch = {
     val value = left.eval(input)
     if (value != null) {
       left.dataType match {
+/*
         case DoubleType => wrapper.sketch.update(value.asInstanceOf[Double])
         case FloatType => wrapper.sketch.update(value.asInstanceOf[Float].toDouble)
         case IntegerType => wrapper.sketch.update(value.asInstanceOf[Int].toDouble)
         case LongType => wrapper.sketch.update(value.asInstanceOf[Long].toDouble)
+*/
+        case DoubleType => sketch.update(value.asInstanceOf[Double])
+        case FloatType => sketch.update(value.asInstanceOf[Float].toDouble)
+        case IntegerType => sketch.update(value.asInstanceOf[Int].toDouble)
+        case LongType => sketch.update(value.asInstanceOf[Long].toDouble)
         case _ => throw new SparkUnsupportedOperationException(
           s"Unsupported input type ${left.dataType.catalogString}",
           Map("dataType" -> dataType.toString))
       }
     }
-    wrapper
+    //wrapper
+    sketch
   }
 
   // union (merge)
-  override def merge(wrapper: KllDoublesSketchWrapper, other: KllDoublesSketchWrapper): KllDoublesSketchWrapper = {
-    if (other != null && !other.sketch.isEmpty) {
-      wrapper.sketch.merge(other.sketch)
+  //override def merge(wrapper: KllDoublesSketchWrapper, other: KllDoublesSketchWrapper): KllDoublesSketchWrapper = {
+    override def merge(sketch: KllDoublesSketch, other: KllDoublesSketch): KllDoublesSketch = {
+    //if (other != null && !other.sketch.isEmpty) {
+    if (other != null && !other.isEmpty) {
+      //wrapper.sketch.merge(other.sketch)
+      sketch.merge(other)
     }
-    wrapper
+    //wrapper
+    sketch
   }
 
   // eval
+  /*
   override def eval(wrapper: KllDoublesSketchWrapper): Any = {
     if (wrapper == null || wrapper.sketch.isEmpty) {
       null
@@ -136,12 +151,22 @@ case class KllDoublesSketchAgg(
       wrapper.toByteArray
     }
   }
+    */
+  override def eval(sketch: KllDoublesSketch): Any = {
+    if (sketch == null || sketch.isEmpty) {
+      null
+    } else {
+      sketch.toByteArray
+    }
+  }
 
-  override def serialize(wrapper: KllDoublesSketchWrapper): Array[Byte] = {
+  //override def serialize(wrapper: KllDoublesSketchWrapper): Array[Byte] = {
+  override def serialize(wrapper: KllDoublesSketch): Array[Byte] = {
     KllDoublesSketchType.serialize(wrapper)
   }
 
-  override def deserialize(bytes: Array[Byte]): KllDoublesSketchWrapper = {
+  //override def deserialize(bytes: Array[Byte]): KllDoublesSketchWrapper = {
+  override def deserialize(bytes: Array[Byte]): KllDoublesSketch = {
     KllDoublesSketchType.deserialize(bytes)
   }
 }

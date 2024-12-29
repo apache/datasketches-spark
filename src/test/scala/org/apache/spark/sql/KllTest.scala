@@ -19,9 +19,13 @@ package org.apache.spark.sql
 
 import scala.util.Random
 import org.apache.spark.sql.functions._
-import org.apache.spark.sql.functions_ds._
-import org.apache.spark.registrar.DatasketchesFunctionRegistry
 import scala.collection.mutable.WrappedArray
+import org.apache.spark.sql.types.{StructType, StructField, IntegerType, BinaryType}
+
+import org.apache.spark.sql.functions_ds._
+import org.apache.datasketches.kll.KllDoublesSketch
+import org.apache.spark.sql.types.KllDoublesSketchType
+import org.apache.spark.registrar.DatasketchesFunctionRegistry
 
 class KllTest extends SparkSessionManager {
   import spark.implicits._
@@ -32,6 +36,28 @@ class KllTest extends SparkSessionManager {
     if (ref.length != tstArr.length)
       throw new AssertionError("Array lengths do not match: " + ref.length + " != " + tstArr.length)
     (ref zip tstArr).foreach { case (v1, v2) => if (v1 != v2) throw new AssertionError("Values do not match: " + v1 + " != " + v2) }
+  }
+
+  test("Load KllDoublesSketch images into dataframe") {
+    val numClass = 10
+    val numSamples = 10000
+
+    // produce a Seq(Array(id, sk))
+    val data = for (i <- 1 to numClass) yield {
+      val sk = KllDoublesSketch.newHeapInstance(200)
+      for (j <- 0 until numSamples) sk.update(Random.nextDouble)
+      Row(i, sk.toByteArray)
+    }
+
+    val schema = StructType(Array(
+      StructField("id", IntegerType, false),
+      StructField("kll", BinaryType, true)
+    ))
+
+    val df = spark.createDataFrame(spark.sparkContext.parallelize(data), schema)
+      .select($"id", KllDoublesSketchType.wrapBytes($"kll").as("sketch"))
+
+    df.show()
   }
 
   test("KLL Doubles Sketch via scala") {

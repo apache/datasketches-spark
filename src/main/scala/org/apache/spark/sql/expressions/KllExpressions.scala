@@ -67,7 +67,7 @@ case class KllGetMin(child: Expression)
     val code =
       s"""
          |${childEval.code}
-         |final org.apache.datasketches.kll.KllDoublesSketch $sketch = org.apache.spark.sql.types.KllDoublesSketchWrapper.wrapAsReadOnlySketch(${childEval.value});
+         |final org.apache.datasketches.kll.KllDoublesSketch $sketch = org.apache.spark.sql.types.KllDoublesSketchType.wrap(${childEval.value});
          |final double ${ev.value} = $sketch.getMinItem();
        """.stripMargin
     ev.copy(code = CodeBlock(Seq(code), Seq.empty), isNull = childEval.isNull)
@@ -117,7 +117,7 @@ case class KllGetMax(child: Expression)
     val code =
       s"""
          |${childEval.code}
-         |final org.apache.datasketches.kll.KllDoublesSketch $sketch = org.apache.spark.sql.types.KllDoublesSketchWrapper.wrapAsReadOnlySketch(${childEval.value});
+         |final org.apache.datasketches.kll.KllDoublesSketch $sketch = org.apache.spark.sql.types.KllDoublesSketchType.wrap(${childEval.value});
          |final double ${ev.value} = $sketch.getMaxItem();
        """.stripMargin
     ev.copy(code = CodeBlock(Seq(code), Seq.empty), isNull = childEval.isNull)
@@ -195,7 +195,7 @@ case class KllGetPmfCdf(left: Expression,
          |  ${ev.isNull} = true;
          |} else {
          |  QuantileSearchCriteria searchCriteria = ${if (isInclusive) "QuantileSearchCriteria.INCLUSIVE" else "QuantileSearchCriteria.EXCLUSIVE"};
-         |  final org.apache.datasketches.kll.KllDoublesSketch $sketch = org.apache.spark.sql.types.KllDoublesSketchWrapper.wrapAsReadOnlySketch(${sketchEval.value});
+         |  final org.apache.datasketches.kll.KllDoublesSketch $sketch = org.apache.spark.sql.types.KllDoublesSketchType.wrap(${sketchEval.value});
          |  final double[] splitPoints = ((org.apache.spark.sql.catalyst.util.GenericArrayData)${splitPointsEval.value}).toDoubleArray();
          |  final double[] result = ${if (isPmf) s"$sketch.getPMF(splitPoints, searchCriteria)" else s"$sketch.getCDF(splitPoints, searchCriteria)"};
          |  GenericArrayData ${ev.value} = new GenericArrayData(result);

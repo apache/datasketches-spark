@@ -35,13 +35,6 @@ trait DatasketchesFunctionRegistry {
   // override this to define the actual functions
   val expressions: Map[String, (ExpressionInfo, FunctionBuilder)]
 
-  // registers all the functions in the expressions Map
-  def registerFunctions(spark: SparkSession): Unit = {
-    expressions.foreach { case (name, (info, builder)) =>
-      spark.sessionState.functionRegistry.registerFunction(FunctionIdentifier(name), info, builder)
-    }
-  }
-
   // simplifies defining the expression (ignoring "since" as a stand-alone library)
   protected def expression[T <: Expression : ClassTag](name: String): (String, (ExpressionInfo, FunctionBuilder)) = {
     val (expressionInfo, builder) = FunctionRegistryBase.build[T](name, None)
@@ -68,7 +61,7 @@ object DatasketchesFunctionRegistry extends DatasketchesFunctionRegistry {
 
     // TODO: it seems like there's got to be a way to simplify this, but
     // perhaps not with the optional isInclusive parameter?
-    // Spark uses ExprssionBuilder, extending that class via a builder class
+    // Spark uses ExpressionBuilder, extending that class via a builder class
     // and overriding build() to handle the lambda.
     // It allows for a cleaner registry here, so we can look at where to put
     // the builder classes in the future.
@@ -82,4 +75,13 @@ object DatasketchesFunctionRegistry extends DatasketchesFunctionRegistry {
       new KllGetPmfCdf(args(0), args(1), isInclusive = isInclusive, isPmf = false)
     }
   )
+
+  // registers all the functions in the expressions Map
+  def registerFunctions(spark: SparkSession): Unit = {
+    val functionRegistry = spark.sessionState.functionRegistry
+    expressions.foreach { case (name, (info, builder)) =>
+      functionRegistry.registerFunction(FunctionIdentifier(name), info, builder)
+    }
+  }
+
 }

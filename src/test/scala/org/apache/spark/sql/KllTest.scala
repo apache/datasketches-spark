@@ -38,7 +38,30 @@ class KllTest extends SparkSessionManager {
     (ref zip tstArr).foreach { case (v1, v2) => if (v1 != v2) throw new AssertionError("Values do not match: " + v1 + " != " + v2) }
   }
 
-  test("Load KllDoublesSketch images into dataframe") {
+  test("Create DataFrame from List") {
+    import java.util.ArrayList
+
+    val numClass = 10
+    val numSamples = 10000
+    val dataList: ArrayList[Row] = new ArrayList[Row]
+
+    // produce a List[Row] of (id, sk)
+    for (i <- 1 to numClass) yield {
+      val sk = KllDoublesSketch.newHeapInstance(200)
+      for (j <- 0 until numSamples) sk.update(Random.nextDouble)
+      dataList.add(Row(i, sk))
+    }
+
+    val schema = StructType(Array(
+      StructField("id", IntegerType, false),
+      StructField("kll", KllDoublesSketchType, true)
+    ))
+
+    val df = spark.createDataFrame(dataList, schema)
+    df.show()
+  }
+
+  test("Create DataFrame from parallelize()") {
     val numClass = 10
     val numSamples = 10000
 

@@ -76,7 +76,7 @@ class ThetaTest extends SparkSessionManager {
     assert(result.getAs[Double]("estimate") == numDistinct)
   }
 
-/*
+
   test("Theta Union via SQL default lgk") {
     val numGroups = 10
     val numDistinct = 2000
@@ -128,5 +128,5 @@ class ThetaTest extends SparkSessionManager {
     """)
     assert(mergedDf.head.getAs[Double]("estimate") == numDistinct)
   }
-*/
+
 }

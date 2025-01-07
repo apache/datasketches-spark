@@ -24,7 +24,7 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.{ExpectsInputTypes, Expression, ExpressionDescription, Literal}
 import org.apache.spark.sql.catalyst.expressions.aggregate.TypedImperativeAggregate
 import org.apache.spark.sql.catalyst.trees.BinaryLike
-import org.apache.spark.sql.types.{AbstractDataType, DataType, ThetaSketchWrapper, ThetaSketchType}
+import org.apache.spark.sql.types.{AbstractDataType, DataType, IntegerType, ThetaSketchWrapper, ThetaSketchType}
 import org.apache.spark.SparkUnsupportedOperationException
 
 /**
@@ -87,7 +87,7 @@ case class ThetaUnion(
   override def nullable: Boolean = false
 
   // TODO: refine this?
-  override def inputTypes: Seq[AbstractDataType] = Seq(ThetaSketchType)
+  override def inputTypes: Seq[AbstractDataType] = Seq(ThetaSketchType, IntegerType)
 
   override def createAggregationBuffer(): ThetaSketchWrapper = new ThetaSketchWrapper(union = Some(SetOperation.builder().setLogNominalEntries(lgk).buildUnion))
 

@@ -27,8 +27,10 @@ import scala.reflect.ClassTag
 
 // DataSketches imports
 import org.apache.spark.sql.aggregate.{KllDoublesSketchAgg, KllDoublesMergeAgg}
-import org.apache.spark.sql.expressions.{KllGetMin, KllGetMax}
-import org.apache.spark.sql.expressions.KllGetPmfCdf
+import org.apache.spark.sql.expressions.{KllGetMin, KllGetMax, KllGetPmfCdf}
+
+import org.apache.spark.sql.aggregate.{ThetaSketchBuild, ThetaUnion}
+import org.apache.spark.sql.expressions.ThetaSketchGetEstimate
 
 // based on org.apache.spark.sql.catalyst.FunctionRegistry
 trait DatasketchesFunctionRegistry {
@@ -80,6 +82,10 @@ object DatasketchesFunctionRegistry extends DatasketchesFunctionRegistry {
     complexExpression[KllGetPmfCdf]("kll_get_cdf") { args: Seq[Expression] =>
       val isInclusive = if (args.length > 2) args(2).eval().asInstanceOf[Boolean] else true
       new KllGetPmfCdf(args(0), args(1), isInclusive = isInclusive, isPmf = false)
-    }
+    },
+
+    expression[ThetaSketchBuild]("theta_sketch_build"),
+    expression[ThetaUnion]("theta_union"),
+    expression[ThetaSketchGetEstimate]("theta_sketch_get_estimate"),
   )
 }

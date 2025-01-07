@@ -28,12 +28,19 @@ import scala.reflect.ClassTag
 // DataSketches imports
 import org.apache.spark.sql.aggregate.{KllDoublesSketchAgg, KllDoublesMergeAgg}
 import org.apache.spark.sql.expressions.{KllGetMin, KllGetMax}
-import org.apache.spark.sql.expressions.KllGetPmfCdf
+import org.apache.spark.sql.expressions.{KllGetPmf, KllGetCdf}
 
 // based on org.apache.spark.sql.catalyst.FunctionRegistry
 trait DatasketchesFunctionRegistry {
   // override this to define the actual functions
   val expressions: Map[String, (ExpressionInfo, FunctionBuilder)]
+
+  // registers all the functions in the expressions Map
+  def registerFunctions(spark: SparkSession): Unit = {
+    expressions.foreach { case (name, (info, builder)) =>
+      spark.sessionState.functionRegistry.registerFunction(FunctionIdentifier(name), info, builder)
+    }
+  }
 
   // simplifies defining the expression (ignoring "since" as a stand-alone library)
   protected def expression[T <: Expression : ClassTag](name: String): (String, (ExpressionInfo, FunctionBuilder)) = {
@@ -44,6 +51,12 @@ trait DatasketchesFunctionRegistry {
   // some functions throw a query compile-time exception around the wrong
   // number of parameters when using expression(). This function allows
   // explicit argument handling by providing a lambda to use for the bulder.
+  // This seems to be related to non-Expression inputs to the classes, but keeping
+  // this an an example of usage for now in case it really is needed:
+  //    complexExpression[KllGetPmfCdf]("kll_get_cdf") { args: Seq[Expression] =>
+  //      val isInclusive = if (args.length > 2) args(2).eval().asInstanceOf[Boolean] else true
+  //      new KllGetPmfCdf(args(0), args(1), isInclusive = isInclusive, isPmf = false)
+  //    }
   protected def complexExpression[T <: Expression : ClassTag](name: String)(f: (Seq[Expression]) => T): (String, (ExpressionInfo, FunctionBuilder)) = {
     val expressionInfo = FunctionRegistryBase.expressionInfo[T](name, None)
     val builder: FunctionBuilder = (args: Seq[Expression]) => f(args)
@@ -58,30 +71,7 @@ object DatasketchesFunctionRegistry extends DatasketchesFunctionRegistry {
     expression[KllDoublesMergeAgg]("kll_merge_agg"),
     expression[KllGetMin]("kll_get_min"),
     expression[KllGetMax]("kll_get_max"),
-
-    // TODO: it seems like there's got to be a way to simplify this, but
-    // perhaps not with the optional isInclusive parameter?
-    // Spark uses ExpressionBuilder, extending that class via a builder class
-    // and overriding build() to handle the lambda.
-    // It allows for a cleaner registry here, so we can look at where to put
-    // the builder classes in the future.
-    // See org.apache.spark.sql.catalyst.expressions.variant.variantExpressions.scala
-    complexExpression[KllGetPmfCdf]("kll_get_pmf") { args: Seq[Expression] =>
-      val isInclusive = if (args.length > 2) args(2).eval().asInstanceOf[Boolean] else true
-      new KllGetPmfCdf(args(0), args(1), isInclusive = isInclusive, isPmf = true)
-    },
-    complexExpression[KllGetPmfCdf]("kll_get_cdf") { args: Seq[Expression] =>
-      val isInclusive = if (args.length > 2) args(2).eval().asInstanceOf[Boolean] else true
-      new KllGetPmfCdf(args(0), args(1), isInclusive = isInclusive, isPmf = false)
-    }
+    expression[KllGetPmf]("kll_get_pmf"),
+    expression[KllGetCdf]("kll_get_cdf")
   )
-
-  // registers all the functions in the expressions Map
-  def registerFunctions(spark: SparkSession): Unit = {
-    val functionRegistry = spark.sessionState.functionRegistry
-    expressions.foreach { case (name, (info, builder)) =>
-      functionRegistry.registerFunction(FunctionIdentifier(name), info, builder)
-    }
-  }
-
 }

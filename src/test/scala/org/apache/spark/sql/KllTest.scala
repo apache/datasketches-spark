@@ -58,7 +58,7 @@ class KllTest extends SparkSessionManager {
     ))
 
     val df = spark.createDataFrame(dataList, schema)
-    df.show()
+    assert(df.count() == numClass)
   }
 
   test("Create DataFrame from parallelize()") {
@@ -80,7 +80,7 @@ class KllTest extends SparkSessionManager {
     val df = spark.createDataFrame(spark.sparkContext.parallelize(data), schema)
       .select($"id", KllDoublesSketchType.wrapBytes($"kll").as("sketch"))
 
-    df.show()
+    assert(df.count() == numClass)
   }
 
   test("KLL Doubles Sketch via scala") {

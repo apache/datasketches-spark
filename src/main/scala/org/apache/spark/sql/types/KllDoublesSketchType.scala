@@ -51,11 +51,11 @@ case object KllDoublesSketchType extends KllDoublesSketchType {
   })
 
   // non-udf version
-  val wrap = ((bytes: Array[Byte]) => {
+  def wrap(bytes: Array[Byte]): KllDoublesSketch = {
     if (bytes == null) {
       null
     } else {
       deserialize(bytes)
     }
-  })
+  }
 }

@@ -49,9 +49,5 @@ scalacOptions ++= Seq(
 
 Test / logBuffered := false
 
-// Only show warnings and errors on the screen for compilations.
-// This applies to both test:compile and compile and is Info by default
-Compile / logLevel := Level.Warn
-
 // Level.INFO is needed to see detailed output when running tests
 Test / logLevel := Level.Info

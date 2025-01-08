@@ -69,7 +69,18 @@ case class KllDoublesMergeAgg(
   }
 
   // Constructors
-  def this(left: Expression) = this(left, Literal(KllSketch.DEFAULT_K), 0, 0)
+  def this(left: Expression) = {
+    this(left, Literal(KllSketch.DEFAULT_K), 0, 0)
+  }
+
+  def this(child: Expression, k: Expression) = {
+    this(child, k, 0, 0)
+  }
+
+  def this(child: Expression, k: Int) = {
+    this(child, Literal(k), 0, 0)
+  }
+
 
   // Copy constructors
   override def withNewMutableAggBufferOffset(newMutableAggBufferOffset: Int): KllDoublesMergeAgg =

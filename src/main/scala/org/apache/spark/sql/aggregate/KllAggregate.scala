@@ -100,6 +100,8 @@ case class KllDoublesSketchAgg(
 
   override def nullable: Boolean = false
 
+  override def stateful: Boolean = true
+
   override def inputTypes: Seq[AbstractDataType] = Seq(NumericType, IntegerType)
 
   override def checkInputDataTypes(): TypeCheckResult = {
@@ -107,12 +109,12 @@ case class KllDoublesSketchAgg(
     if (!right.foldable) {
       return TypeCheckResult.TypeCheckFailure(s"k must be foldable, but got: ${right}")
     }
-    // Check if k > 0
+    // Check if k >= 8 and k <= MAX_K
     right.eval() match {
-      case k: Int if k > 0 => // valid state, do nothing
+      case k: Int if k >= 8 && k <= KllSketch.MAX_K => // valid state, do nothing
       case k: Int if k > KllSketch.MAX_K => return TypeCheckResult.TypeCheckFailure(
         s"k must be less than or equal to ${KllSketch.MAX_K}, but got: $k")
-      case k: Int => return TypeCheckResult.TypeCheckFailure(s"k must be greater than 0, but got: $k")
+      case k: Int => return TypeCheckResult.TypeCheckFailure(s"k must be at least 8 and no greater than ${KllSketch.MAX_K}, but got: $k")
       case _ => return TypeCheckResult.TypeCheckFailure(s"Unsupported input type ${right.dataType.catalogString}")
     }
 

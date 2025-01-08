@@ -84,6 +84,18 @@ object functions_ds {
     kll_merge_agg(Column(columnName))
   }
 
+  def kll_merge_agg(expr: Column, k: Column): Column = withAggregateFunction {
+    new KllDoublesMergeAgg(expr.expr, k.expr)
+  }
+
+  def kll_merge_agg(expr: Column, k: Int): Column = withAggregateFunction {
+    new KllDoublesMergeAgg(expr.expr, lit(k).expr)
+  }
+
+  def kll_merge_agg(columnName: String, k: Int): Column = {
+    kll_merge_agg(Column(columnName), lit(k))
+  }
+
   // get PMF
   def kll_get_pmf(sketch: Column, splitPoints: Column, isInclusive: Boolean): Column = withExpr {
     new KllGetPmfCdf(sketch.expr, splitPoints.expr, Literal.create(isInclusive, BooleanType), true)

@@ -180,16 +180,32 @@ class KllTest extends SparkSessionManager {
     // create a sketch for each id value
     val idSketchDf = data.groupBy($"id").agg(kll_sketch_agg($"value").as("sketch"))
 
+    // default k
     // merge into an aggregate sketch
-    val mergedSketchDf = idSketchDf.agg(kll_merge_agg($"sketch").as("sketch"))
+    var mergedSketchDf = idSketchDf.agg(kll_merge_agg($"sketch").as("sketch"))
 
     // check min and max
-    val result: Row = mergedSketchDf.select(kll_get_min($"sketch").as("min"),
+    var result: Row = mergedSketchDf.select(kll_get_min($"sketch").as("min"),
                                             kll_get_max($"sketch").as("max"))
                                     .head
 
-    val sketchMin = result.getAs[Double]("min")
-    val sketchMax = result.getAs[Double]("max")
+    var sketchMin = result.getAs[Double]("min")
+    var sketchMax = result.getAs[Double]("max")
+
+    assert(globalMin == sketchMin)
+    assert(globalMax == sketchMax)
+
+    // specified k
+    // merge into an aggregate sketch
+    mergedSketchDf = idSketchDf.agg(kll_merge_agg($"sketch", 160).as("sketch"))
+
+    // check min and max
+    result = mergedSketchDf.select(kll_get_min($"sketch").as("min"),
+                                   kll_get_max($"sketch").as("max"))
+                           .head
+
+    sketchMin = result.getAs[Double]("min")
+    sketchMax = result.getAs[Double]("max")
 
     assert(globalMin == sketchMin)
     assert(globalMax == sketchMax)
@@ -222,8 +238,9 @@ class KllTest extends SparkSessionManager {
     )
     idSketchDf.createOrReplaceTempView("sketch_table")
 
+    // default k
     // now merge the sketches
-    val mergedSketchDf = spark.sql(
+    var mergedSketchDf = spark.sql(
       s"""
       |SELECT
       |  kll_get_min(sub.sketch) AS min,
@@ -238,9 +255,33 @@ class KllTest extends SparkSessionManager {
     )
 
     // check min and max
-    val result: Row = mergedSketchDf.head
-    val sketchMin = result.getAs[Double]("min")
-    val sketchMax = result.getAs[Double]("max")
+    var result: Row = mergedSketchDf.head
+    var sketchMin = result.getAs[Double]("min")
+    var sketchMax = result.getAs[Double]("max")
+
+    assert(globalMin == sketchMin)
+    assert(globalMax == sketchMax)
+
+    // specified k
+    // now merge the sketches
+    mergedSketchDf = spark.sql(
+      s"""
+      |SELECT
+      |  kll_get_min(sub.sketch) AS min,
+      |  kll_get_max(sub.sketch) AS max
+      |FROM
+      |  (SELECT
+      |     kll_merge_agg(sketch, 160) AS sketch
+      |  FROM
+      |    sketch_table
+      |  ) sub
+      """.stripMargin
+    )
+
+    // check min and max
+    result = mergedSketchDf.head
+    sketchMin = result.getAs[Double]("min")
+    sketchMax = result.getAs[Double]("max")
 
     assert(globalMin == sketchMin)
     assert(globalMax == sketchMax)

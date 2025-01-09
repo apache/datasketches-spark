@@ -42,7 +42,7 @@ import org.apache.spark.sql.catalyst.analysis.TypeCheckResult
     """,
   examples = """
     Examples:
-      > SELECT kll_get_quantile(_FUNC_(sketch), 200) FROM (SELECT kll_sketch_agg(col) as sketch FROM VALUES (1.0), (2.0) tab(col) UNION ALL SELECT kll_sketch_agg(col) as sketch FROM VALUES (2.0), (3.0) tab(col));
+      > SELECT kll_get_quantile(_FUNC_(sketch), 0.5) FROM (SELECT kll_sketch_agg(col) as sketch FROM VALUES (1.0), (2.0) tab(col) UNION ALL SELECT kll_sketch_agg(col) as sketch FROM VALUES (2.0), (3.0) tab(col));
        2.0
   """,
   //group = "agg_funcs",

@@ -49,8 +49,8 @@ import org.apache.spark.sql.catalyst.analysis.TypeCheckResult
 )
 // scalastyle:on line.size.limit
 case class KllDoublesMergeAgg(
-    left: Expression,
-    right: Expression,
+    sketchExpr: Expression,
+    kExpr: Expression,
     mutableAggBufferOffset: Int = 0,
     inputAggBufferOffset: Int = 0)
   extends TypedImperativeAggregate[KllDoublesSketch]
@@ -58,7 +58,7 @@ case class KllDoublesMergeAgg(
     with ExpectsInputTypes {
 
   lazy val k: Int = {
-    right.eval() match {
+    kExpr.eval() match {
       case null => KllSketch.DEFAULT_K
       case k: Int => k
       // this shouldn't happen after checkInputDataTypes()
@@ -68,19 +68,22 @@ case class KllDoublesMergeAgg(
     }
   }
 
+  // define names for BinaryLike
+  override def left: Expression = sketchExpr
+  override def right: Expression = kExpr
+
   // Constructors
-  def this(left: Expression) = {
-    this(left, Literal(KllSketch.DEFAULT_K), 0, 0)
+  def this(sketchExpr: Expression) = {
+    this(sketchExpr, Literal(KllSketch.DEFAULT_K), 0, 0)
   }
 
-  def this(child: Expression, k: Expression) = {
-    this(child, k, 0, 0)
+  def this(sketchExpr: Expression, kExpr: Expression) = {
+    this(sketchExpr, kExpr, 0, 0)
   }
 
-  def this(child: Expression, k: Int) = {
-    this(child, Literal(k), 0, 0)
+  def this(sketchExpr: Expression, k: Int) = {
+    this(sketchExpr, Literal(k), 0, 0)
   }
-
 
   // Copy constructors
   override def withNewMutableAggBufferOffset(newMutableAggBufferOffset: Int): KllDoublesMergeAgg =
@@ -90,7 +93,7 @@ case class KllDoublesMergeAgg(
     copy(inputAggBufferOffset = newInputAggBufferOffset)
 
   override protected def withNewChildrenInternal(newLeft: Expression, newRight: Expression): KllDoublesMergeAgg =
-    copy(left = newLeft, right = newRight)
+    copy(sketchExpr = newLeft, kExpr = newRight)
 
   // overrides for TypedImperativeAggregate
   override def prettyName: String = "kll_merge_agg"
@@ -105,16 +108,16 @@ case class KllDoublesMergeAgg(
 
   override def checkInputDataTypes(): TypeCheckResult = {
     // k must be a constant
-    if (!right.foldable) {
-      return TypeCheckResult.TypeCheckFailure(s"k must be foldable, but got: ${right}")
+    if (!kExpr.foldable) {
+      return TypeCheckResult.TypeCheckFailure(s"k must be foldable, but got: ${kExpr}")
     }
     // Check if k >= 8 and k <= MAX_K
-    right.eval() match {
+    kExpr.eval() match {
       case k: Int if k >= 8 && k <= KllSketch.MAX_K => // valid state, do nothing
       case k: Int if k > KllSketch.MAX_K => return TypeCheckResult.TypeCheckFailure(
         s"k must be less than or equal to ${KllSketch.MAX_K}, but got: $k")
       case k: Int => return TypeCheckResult.TypeCheckFailure(s"k must be at least 8 and no greater than ${KllSketch.MAX_K}, but got: $k")
-      case _ => return TypeCheckResult.TypeCheckFailure(s"Unsupported input type ${right.dataType.catalogString}")
+      case _ => return TypeCheckResult.TypeCheckFailure(s"Unsupported input type ${kExpr.dataType.catalogString}")
     }
 
     // additional validations of k handled in the DataSketches library
@@ -126,14 +129,14 @@ case class KllDoublesMergeAgg(
   }
 
   override def update(union: KllDoublesSketch, input: InternalRow): KllDoublesSketch = {
-    val value = left.eval(input)
+    val value = sketchExpr.eval(input)
     if (value != null && value != None) {
-      left.dataType match {
+      sketchExpr.dataType match {
         case KllDoublesSketchType =>
             union.merge(KllDoublesSketch.wrap(Memory.wrap(value.asInstanceOf[Array[Byte]])))
             union
         case _ => throw new SparkUnsupportedOperationException(
-          s"Unsupported input type ${left.dataType.catalogString}",
+          s"Unsupported input type ${sketchExpr.dataType.catalogString}",
           Map("dataType" -> dataType.toString))
       }
     } else {

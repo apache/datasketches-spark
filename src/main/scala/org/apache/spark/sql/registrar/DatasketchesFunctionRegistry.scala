@@ -73,10 +73,10 @@ object DatasketchesFunctionRegistry extends DatasketchesFunctionRegistry {
     expression[KllGetMin]("kll_get_min"),
     expression[KllGetMax]("kll_get_max"),
     expression[KllGetPmf]("kll_get_pmf"),
-    expression[KllGetCdf]("kll_get_cdf")
+    expression[KllGetCdf]("kll_get_cdf"),
 
     expression[ThetaSketchBuild]("theta_sketch_build"),
     expression[ThetaUnion]("theta_union"),
-    expression[ThetaSketchGetEstimate]("theta_sketch_get_estimate"),
+    expression[ThetaSketchGetEstimate]("theta_sketch_get_estimate")
   )
 }

@@ -22,8 +22,9 @@ import org.apache.spark.sql.aggregate.{KllDoublesSketchAgg, KllDoublesMergeAgg}
 import org.apache.spark.sql.aggregate.{ThetaSketchBuild, ThetaUnion}
 import org.apache.spark.sql.catalyst.expressions.{Expression, Literal}
 import org.apache.spark.sql.catalyst.expressions.aggregate.AggregateFunction
-import org.apache.spark.sql.expressions._
 import org.apache.spark.sql.catalyst.expressions.Literal
+import org.apache.spark.sql.expressions._
+import org.apache.spark.sql.functions.lit
 import org.apache.spark.sql.types.{ArrayType, BooleanType, DoubleType}
 
 // this class defines and maps all the variants of each function invocation, analagous

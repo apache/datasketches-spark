@@ -17,11 +17,11 @@
 
 package org.apache.spark.sql
 
-import org.apache.spark.sql.functions.lit
-import org.apache.spark.sql.catalyst.expressions.aggregate.AggregateFunction
 
-import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.aggregate.{KllDoublesSketchAgg, KllDoublesMergeAgg}
+import org.apache.spark.sql.aggregate.{ThetaSketchBuild, ThetaUnion}
+import org.apache.spark.sql.catalyst.expressions.{Expression, Literal}
+import org.apache.spark.sql.catalyst.expressions.aggregate.AggregateFunction
 import org.apache.spark.sql.expressions._
 import org.apache.spark.sql.catalyst.expressions.Literal
 import org.apache.spark.sql.types.{ArrayType, BooleanType, DoubleType}
@@ -163,4 +163,45 @@ object functions_ds {
     kll_get_cdf(Column(columnName), splitPoints)
   }
 
+  // Theta
+
+  def theta_sketch_build(column: Column, lgk: Int): Column = withAggregateFunction {
+    new ThetaSketchBuild(column.expr, lgk)
+  }
+
+  def theta_sketch_build(columnName: String, lgk: Int): Column = {
+    theta_sketch_build(Column(columnName), lgk)
+  }
+
+  def theta_sketch_build(column: Column): Column = withAggregateFunction {
+    new ThetaSketchBuild(column.expr)
+  }
+
+  def theta_sketch_build(columnName: String): Column = {
+    theta_sketch_build(Column(columnName))
+  }
+
+  def theta_union(column: Column, lgk: Int): Column = withAggregateFunction {
+    new ThetaUnion(column.expr, lit(lgk).expr)
+  }
+
+  def theta_union(columnName: String, lgk: Int): Column = withAggregateFunction {
+    new ThetaUnion(Column(columnName).expr, lit(lgk).expr)
+  }
+
+  def theta_union(column: Column): Column = withAggregateFunction {
+    new ThetaUnion(column.expr)
+  }
+
+  def theta_union(columnName: String): Column = withAggregateFunction {
+    new ThetaUnion(Column(columnName).expr)
+  }
+
+  def theta_sketch_get_estimate(column: Column): Column = withExpr {
+    new ThetaSketchGetEstimate(column.expr)
+  }
+
+  def theta_sketch_get_estimate(columnName: String): Column = {
+    theta_sketch_get_estimate(Column(columnName))
+  }
 }

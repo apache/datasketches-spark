@@ -27,8 +27,9 @@ import scala.reflect.ClassTag
 
 // DataSketches imports
 import org.apache.spark.sql.aggregate.{KllDoublesSketchAgg, KllDoublesMergeAgg}
-import org.apache.spark.sql.expressions.{KllGetMin, KllGetMax}
-import org.apache.spark.sql.expressions.{KllGetPmf, KllGetCdf}
+import org.apache.spark.sql.expressions.{KllGetMin, KllGetMax, KllGetPmf, KllGetCdf}
+import org.apache.spark.sql.aggregate.{ThetaSketchBuild, ThetaUnion}
+import org.apache.spark.sql.expressions.ThetaSketchGetEstimate
 
 // based on org.apache.spark.sql.catalyst.FunctionRegistry
 trait DatasketchesFunctionRegistry {
@@ -73,5 +74,9 @@ object DatasketchesFunctionRegistry extends DatasketchesFunctionRegistry {
     expression[KllGetMax]("kll_get_max"),
     expression[KllGetPmf]("kll_get_pmf"),
     expression[KllGetCdf]("kll_get_cdf")
+
+    expression[ThetaSketchBuild]("theta_sketch_build"),
+    expression[ThetaUnion]("theta_union"),
+    expression[ThetaSketchGetEstimate]("theta_sketch_get_estimate"),
   )
 }

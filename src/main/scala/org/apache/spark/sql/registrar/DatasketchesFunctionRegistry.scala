@@ -27,8 +27,7 @@ import scala.reflect.ClassTag
 
 // DataSketches imports
 import org.apache.spark.sql.aggregate.{KllDoublesSketchAgg, KllDoublesMergeAgg}
-import org.apache.spark.sql.expressions.{KllGetMin, KllGetMax, KllGetPmfCdf}
-
+import org.apache.spark.sql.expressions.{KllGetMin, KllGetMax, KllGetPmf, KllGetCdf}
 import org.apache.spark.sql.aggregate.{ThetaSketchBuild, ThetaUnion}
 import org.apache.spark.sql.expressions.ThetaSketchGetEstimate
 
@@ -53,6 +52,12 @@ trait DatasketchesFunctionRegistry {
   // some functions throw a query compile-time exception around the wrong
   // number of parameters when using expression(). This function allows
   // explicit argument handling by providing a lambda to use for the bulder.
+  // This seems to be related to non-Expression inputs to the classes, but keeping
+  // this an an example of usage for now in case it really is needed:
+  //    complexExpression[KllGetPmfCdf]("kll_get_cdf") { args: Seq[Expression] =>
+  //      val isInclusive = if (args.length > 2) args(2).eval().asInstanceOf[Boolean] else true
+  //      new KllGetPmfCdf(args(0), args(1), isInclusive = isInclusive, isPmf = false)
+  //    }
   protected def complexExpression[T <: Expression : ClassTag](name: String)(f: (Seq[Expression]) => T): (String, (ExpressionInfo, FunctionBuilder)) = {
     val expressionInfo = FunctionRegistryBase.expressionInfo[T](name, None)
     val builder: FunctionBuilder = (args: Seq[Expression]) => f(args)
@@ -67,22 +72,8 @@ object DatasketchesFunctionRegistry extends DatasketchesFunctionRegistry {
     expression[KllDoublesMergeAgg]("kll_merge_agg"),
     expression[KllGetMin]("kll_get_min"),
     expression[KllGetMax]("kll_get_max"),
-
-    // TODO: it seems like there's got to be a way to simplify this, but
-    // perhaps not with the optional isInclusive parameter?
-    // Spark uses ExprssionBuilder, extending that class via a builder class
-    // and overriding build() to handle the lambda.
-    // It allows for a cleaner registry here, so we can look at where to put
-    // the builder classes in the future.
-    // See org.apache.spark.sql.catalyst.expressions.variant.variantExpressions.scala
-    complexExpression[KllGetPmfCdf]("kll_get_pmf") { args: Seq[Expression] =>
-      val isInclusive = if (args.length > 2) args(2).eval().asInstanceOf[Boolean] else true
-      new KllGetPmfCdf(args(0), args(1), isInclusive = isInclusive, isPmf = true)
-    },
-    complexExpression[KllGetPmfCdf]("kll_get_cdf") { args: Seq[Expression] =>
-      val isInclusive = if (args.length > 2) args(2).eval().asInstanceOf[Boolean] else true
-      new KllGetPmfCdf(args(0), args(1), isInclusive = isInclusive, isPmf = false)
-    },
+    expression[KllGetPmf]("kll_get_pmf"),
+    expression[KllGetCdf]("kll_get_cdf")
 
     expression[ThetaSketchBuild]("theta_sketch_build"),
     expression[ThetaUnion]("theta_union"),

@@ -33,6 +33,7 @@ trait SparkSessionManager extends AnyFunSuite with BeforeAndAfterAll {
       .builder()
       .appName("datasketches-spark-tests")
       .master("local[3]")
+      //.config("spark.sql.debug.codegen", "true")
       .getOrCreate()
 
   override def beforeAll(): Unit = {

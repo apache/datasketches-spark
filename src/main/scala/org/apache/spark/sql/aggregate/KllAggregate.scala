@@ -24,14 +24,15 @@ import org.apache.spark.sql.catalyst.expressions.{ExpectsInputTypes, Expression,
 import org.apache.spark.sql.catalyst.expressions.aggregate.TypedImperativeAggregate
 import org.apache.spark.sql.catalyst.trees.BinaryLike
 import org.apache.spark.sql.types.{AbstractDataType, DataType, IntegerType, LongType, NumericType, FloatType, DoubleType, KllDoublesSketchType}
+import org.apache.spark.sql.catalyst.analysis.TypeCheckResult
 
 /**
  * The KllDoublesSketchAgg function utilizes a Datasketches KllDoublesSketch instance
  * to create a sketch from a column of values which can be used to estimate quantiles
  * and histograms.
  *
- * @param child child expression against which the sketch will be created
- * @param k the size-accuracy trade-off parameter for the sketch
+ * @param data Expression with data values against which the sketch will be created
+ * @param kExpr Expression for k, the size-accuracy trade-off parameter for the sketch, int in range [1, 65535]
  */
 // scalastyle:off line.size.limit
 @ExpressionDescription(
@@ -46,8 +47,8 @@ import org.apache.spark.sql.types.{AbstractDataType, DataType, IntegerType, Long
 )
 // scalastyle:on line.size.limit
 case class KllDoublesSketchAgg(
-    left: Expression,
-    right: Expression,
+    dataExpr: Expression,
+    kExpr: Expression,
     mutableAggBufferOffset: Int = 0,
     inputAggBufferOffset: Int = 0)
   extends TypedImperativeAggregate[KllDoublesSketch]
@@ -55,27 +56,31 @@ case class KllDoublesSketchAgg(
     with ExpectsInputTypes {
 
   lazy val k: Int = {
-    right.eval() match {
+    kExpr.eval() match {
       case null => KllSketch.DEFAULT_K
       case k: Int => k
+      // this shouldn't happen after checkInputDataTypes()
       case _ => throw new SparkUnsupportedOperationException(
-        s"Unsupported input type ${right.dataType.catalogString}",
+        s"Unsupported input type ${kExpr.dataType.catalogString}",
         Map("dataType" -> dataType.toString))
     }
   }
 
+  // define names for BinaryLike
+  override def left: Expression = dataExpr
+  override def right: Expression = kExpr
+
   // Constructors
-
-  def this(child: Expression) = {
-    this(child, Literal(KllSketch.DEFAULT_K), 0, 0)
+  def this(dataExpr: Expression) = {
+    this(dataExpr, Literal(KllSketch.DEFAULT_K), 0, 0)
   }
 
-  def this(child: Expression, k: Expression) = {
-    this(child, k, 0, 0)
+  def this(dataExpr: Expression, kExpr: Expression) = {
+    this(dataExpr, kExpr, 0, 0)
   }
 
-  def this(child: Expression, k: Int) = {
-    this(child, Literal(k), 0, 0)
+  def this(dataExpr: Expression, k: Int) = {
+    this(dataExpr, Literal(k), 0, 0)
   }
 
   // Copy constructors
@@ -87,39 +92,58 @@ case class KllDoublesSketchAgg(
 
   override protected def withNewChildrenInternal(newLeft: Expression,
                                                  newRight: Expression): KllDoublesSketchAgg = {
-    copy(left = newLeft, right = newRight)
+    copy(dataExpr = newLeft, kExpr = newRight)
   }
 
   // overrides for TypedImperativeAggregate
+  override lazy val deterministic: Boolean = false
+
   override def prettyName: String = "kll_sketch_agg"
 
   override def dataType: DataType = KllDoublesSketchType
 
   override def nullable: Boolean = false
 
-  override def inputTypes: Seq[AbstractDataType] = Seq(NumericType, IntegerType, LongType, FloatType, DoubleType)
+  override def stateful: Boolean = true
 
-  // create buffer
+  override def inputTypes: Seq[AbstractDataType] = Seq(NumericType, IntegerType)
+
+  override def checkInputDataTypes(): TypeCheckResult = {
+    // k must be a constant
+    if (!kExpr.foldable) {
+      return TypeCheckResult.TypeCheckFailure(s"k must be foldable, but got: ${kExpr}")
+    }
+    // Check if k >= 8 and k <= MAX_K
+    kExpr.eval() match {
+      case k: Int if k >= 8 && k <= KllSketch.MAX_K => // valid state, do nothing
+      case k: Int if k > KllSketch.MAX_K => return TypeCheckResult.TypeCheckFailure(
+        s"k must be less than or equal to ${KllSketch.MAX_K}, but got: $k")
+      case k: Int => return TypeCheckResult.TypeCheckFailure(s"k must be at least 8 and no greater than ${KllSketch.MAX_K}, but got: $k")
+      case _ => return TypeCheckResult.TypeCheckFailure(s"Unsupported input type ${kExpr.dataType.catalogString}")
+    }
+
+    // additional validations of k handled in the DataSketches library
+    TypeCheckResult.TypeCheckSuccess
+  }
+
   override def createAggregationBuffer(): KllDoublesSketch = KllDoublesSketch.newHeapInstance(k)
 
-  // update
   override def update(sketch: KllDoublesSketch, input: InternalRow): KllDoublesSketch = {
-    val value = left.eval(input)
+    val value = dataExpr.eval(input)
     if (value != null) {
-      left.dataType match {
+      dataExpr.dataType match {
         case DoubleType => sketch.update(value.asInstanceOf[Double])
         case FloatType => sketch.update(value.asInstanceOf[Float].toDouble)
         case IntegerType => sketch.update(value.asInstanceOf[Int].toDouble)
         case LongType => sketch.update(value.asInstanceOf[Long].toDouble)
         case _ => throw new SparkUnsupportedOperationException(
-          s"Unsupported input type ${left.dataType.catalogString}",
+          s"Unsupported input type ${dataExpr.dataType.catalogString}",
           Map("dataType" -> dataType.toString))
       }
     }
     sketch
   }
 
-  // union (merge)
   override def merge(sketch: KllDoublesSketch, other: KllDoublesSketch): KllDoublesSketch = {
     if (other != null && !other.isEmpty) {
       sketch.merge(other)
@@ -127,7 +151,6 @@ case class KllDoublesSketchAgg(
     sketch
   }
 
-  // eval
   override def eval(sketch: KllDoublesSketch): Any = {
     if (sketch == null || sketch.isEmpty) {
       null

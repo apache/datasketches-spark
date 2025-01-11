@@ -23,8 +23,8 @@ import org.apache.spark.sql.aggregate.{ThetaSketchBuild, ThetaUnion}
 import org.apache.spark.sql.catalyst.expressions.{Expression, Literal}
 import org.apache.spark.sql.catalyst.expressions.aggregate.AggregateFunction
 import org.apache.spark.sql.expressions._
-import org.apache.spark.sql.functions.lit
-import org.apache.spark.sql.types.{ArrayType, DoubleType}
+import org.apache.spark.sql.catalyst.expressions.Literal
+import org.apache.spark.sql.types.{ArrayType, BooleanType, DoubleType}
 
 // this class defines and maps all the variants of each function invocation, analagous
 // to the functions object in org.apache.spark.sql.functions
@@ -84,13 +84,25 @@ object functions_ds {
     kll_merge_agg(Column(columnName))
   }
 
+  def kll_merge_agg(expr: Column, k: Column): Column = withAggregateFunction {
+    new KllDoublesMergeAgg(expr.expr, k.expr)
+  }
+
+  def kll_merge_agg(expr: Column, k: Int): Column = withAggregateFunction {
+    new KllDoublesMergeAgg(expr.expr, lit(k).expr)
+  }
+
+  def kll_merge_agg(columnName: String, k: Int): Column = {
+    kll_merge_agg(Column(columnName), lit(k))
+  }
+
   // get PMF
   def kll_get_pmf(sketch: Column, splitPoints: Column, isInclusive: Boolean): Column = withExpr {
-    new KllGetPmfCdf(sketch.expr, splitPoints.expr, isInclusive, true)
+    new KllGetPmfCdf(sketch.expr, splitPoints.expr, Literal.create(isInclusive, BooleanType), true)
   }
 
   def kll_get_pmf(sketch: Column, splitPoints: Column): Column = withExpr {
-    new KllGetPmfCdf(sketch.expr, splitPoints.expr, true, true)
+    new KllGetPmfCdf(sketch.expr, splitPoints.expr, Literal(true), true)
   }
 
   def kll_get_pmf(columnName: String, splitPoints: Column, isInclusive: Boolean): Column = {
@@ -120,11 +132,11 @@ object functions_ds {
 
   // get CDF
   def kll_get_cdf(sketch: Column, splitPoints: Column, isInclusive: Boolean): Column = withExpr {
-    new KllGetPmfCdf(sketch.expr, splitPoints.expr, isInclusive, false)
+    new KllGetPmfCdf(sketch.expr, splitPoints.expr, Literal.create(isInclusive, BooleanType), false)
   }
 
   def kll_get_cdf(sketch: Column, splitPoints: Column): Column = withExpr {
-    new KllGetPmfCdf(sketch.expr, splitPoints.expr, true, false)
+    new KllGetPmfCdf(sketch.expr, splitPoints.expr, Literal(true), false)
   }
 
   def kll_get_cdf(columnName: String, splitPoints: Column, isInclusive: Boolean): Column = {

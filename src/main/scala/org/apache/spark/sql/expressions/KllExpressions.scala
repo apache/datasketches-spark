@@ -19,14 +19,17 @@ package org.apache.spark.sql.expressions
 
 import org.apache.datasketches.memory.Memory
 import org.apache.datasketches.kll.KllDoublesSketch
-import org.apache.spark.sql.catalyst.expressions.{Expression, ExpectsInputTypes, UnaryExpression, BinaryExpression}
-import org.apache.spark.sql.types.{AbstractDataType, DataType, ArrayType, DoubleType, KllDoublesSketchType}
-import org.apache.spark.sql.catalyst.expressions.NullIntolerant
-import org.apache.spark.sql.catalyst.expressions.codegen.{CodeBlock, CodegenContext, ExprCode}
 import org.apache.datasketches.quantilescommon.QuantileSearchCriteria
+import org.apache.spark.sql.types.KllDoublesSketchType
+
+import org.apache.spark.sql.types.{AbstractDataType, ArrayType, BooleanType, DataType, DoubleType}
+import org.apache.spark.sql.catalyst.expressions.{Expression, ExpressionDescription, ExpectsInputTypes, ImplicitCastInputTypes}
+import org.apache.spark.sql.catalyst.expressions.{UnaryExpression, TernaryExpression}
+import org.apache.spark.sql.catalyst.expressions.{Literal, NullIntolerant, RuntimeReplaceable}
+import org.apache.spark.sql.catalyst.expressions.codegen.{CodeBlock, CodegenContext, ExprCode}
 import org.apache.spark.sql.catalyst.util.GenericArrayData
-import org.apache.spark.sql.catalyst.expressions.ExpressionDescription
-import org.apache.spark.sql.catalyst.expressions.ImplicitCastInputTypes
+import org.apache.spark.sql.catalyst.trees.TernaryLike
+import org.apache.spark.sql.catalyst.analysis.TypeCheckResult
 
 @ExpressionDescription(
   usage = """
@@ -39,13 +42,15 @@ import org.apache.spark.sql.catalyst.expressions.ImplicitCastInputTypes
   """
   //group = "misc_funcs",
 )
-case class KllGetMin(child: Expression)
+case class KllGetMin(sketchExpr: Expression)
  extends UnaryExpression
  with ExpectsInputTypes
  with NullIntolerant {
 
+  override def child: Expression = sketchExpr
+
   override protected def withNewChildInternal(newChild: Expression): KllGetMin = {
-    copy(child = newChild)
+    copy(sketchExpr = newChild)
   }
 
   override def prettyName: String = "kll_get_min"
@@ -61,16 +66,16 @@ case class KllGetMin(child: Expression)
   }
 
   override protected def nullSafeCodeGen(ctx: CodegenContext, ev: ExprCode, f: String => String): ExprCode = {
-    val childEval = child.genCode(ctx)
+    val sketchEval = child.genCode(ctx)
     val sketch = ctx.freshName("sketch")
 
     val code =
       s"""
-         |${childEval.code}
-         |final org.apache.datasketches.kll.KllDoublesSketch $sketch = org.apache.spark.sql.types.KllDoublesSketchWrapper.wrapAsReadOnlySketch(${childEval.value});
+         |${sketchEval.code}
+         |final org.apache.datasketches.kll.KllDoublesSketch $sketch = org.apache.spark.sql.types.KllDoublesSketchType.wrap(${sketchEval.value});
          |final double ${ev.value} = $sketch.getMinItem();
        """.stripMargin
-    ev.copy(code = CodeBlock(Seq(code), Seq.empty), isNull = childEval.isNull)
+    ev.copy(code = CodeBlock(Seq(code), Seq.empty), isNull = sketchEval.isNull)
   }
 
   override def doGenCode(ctx: CodegenContext, ev: ExprCode): ExprCode = {
@@ -89,13 +94,15 @@ case class KllGetMin(child: Expression)
   """
   //group = "misc_funcs",
 )
-case class KllGetMax(child: Expression)
+case class KllGetMax(sketchExpr: Expression)
  extends UnaryExpression
  with ExpectsInputTypes
  with NullIntolerant {
 
+  override def child: Expression = sketchExpr
+
   override protected def withNewChildInternal(newChild: Expression): KllGetMax = {
-    copy(child = newChild)
+    copy(sketchExpr = newChild)
   }
 
   override def prettyName: String = "kll_get_max"
@@ -111,16 +118,16 @@ case class KllGetMax(child: Expression)
   }
 
   override protected def nullSafeCodeGen(ctx: CodegenContext, ev: ExprCode, f: String => String): ExprCode = {
-    val childEval = child.genCode(ctx)
+    val sketchEval = child.genCode(ctx)
     val sketch = ctx.freshName("sketch")
 
     val code =
       s"""
-         |${childEval.code}
-         |final org.apache.datasketches.kll.KllDoublesSketch $sketch = org.apache.spark.sql.types.KllDoublesSketchWrapper.wrapAsReadOnlySketch(${childEval.value});
+         |${sketchEval.code}
+         |final org.apache.datasketches.kll.KllDoublesSketch $sketch = org.apache.spark.sql.types.KllDoublesSketchType.wrap(${sketchEval.value});
          |final double ${ev.value} = $sketch.getMaxItem();
        """.stripMargin
-    ev.copy(code = CodeBlock(Seq(code), Seq.empty), isNull = childEval.isNull)
+    ev.copy(code = CodeBlock(Seq(code), Seq.empty), isNull = sketchEval.isNull)
   }
 
   override def doGenCode(ctx: CodegenContext, ev: ExprCode): ExprCode = {
@@ -128,13 +135,81 @@ case class KllGetMax(child: Expression)
   }
 }
 
+@ExpressionDescription(
+  usage = """
+    _FUNC_(expr, expr, isInclusive) - Returns an approximation to the PMF
+      of the given KllDoublesSketch using the specified search criteria (default: inclusive, isInclusive = true)
+      or exclusive using the given split points.
+  """,
+  examples = """
+    Examples:
+      > SELECT _FUNC_(kll_sketch_agg(col), array(1.5, 3.5)) FROM VALUES (1.0), (2.0), (3.0) tab(col);
+       [0.3333333333333333, 0.6666666666666666, 0.0]
+  """
+)
+case class KllGetPmf(sketchExpr: Expression,
+                     splitPointsExpr: Expression,
+                     isInclusiveExpr: Expression)
+    extends RuntimeReplaceable
+    with ImplicitCastInputTypes
+    with TernaryLike[Expression] {
+
+    def this(sketchExpr: Expression, splitPointsExpr: Expression) = {
+        this(sketchExpr, splitPointsExpr, Literal(true))
+    }
+
+    override def first: Expression = sketchExpr
+    override def second: Expression = splitPointsExpr
+    override def third: Expression = isInclusiveExpr
+
+    override lazy val replacement: Expression = KllGetPmfCdf(sketchExpr, splitPointsExpr, isInclusiveExpr, true)
+    override def inputTypes: Seq[AbstractDataType] = Seq(KllDoublesSketchType, ArrayType(DoubleType), BooleanType)
+    override protected def withNewChildrenInternal(newFirst: Expression, newSecond: Expression, newThird: Expression): Expression = {
+        copy(sketchExpr = newFirst, splitPointsExpr = newSecond, isInclusiveExpr = newThird)
+    }
+}
+
+@ExpressionDescription(
+  usage = """
+    _FUNC_(expr, expr, isInclusive) - Returns an approximation to the PMF
+      of the given KllDoublesSketch using the specified search criteria (default: inclusive, isInclusive = true)
+      or exclusive using the given split points.
+  """,
+  examples = """
+    Examples:
+      > SELECT _FUNC_(kll_sketch_agg(col), array(1.5, 3.5)) FROM VALUES (1.0), (2.0), (3.0) tab(col);
+       [0.3333333333333333, 0.6666666666666666, 0.0]
+  """
+)
+case class KllGetCdf(sketchExpr: Expression,
+                     splitPointsExpr: Expression,
+                     isInclusiveExpr: Expression)
+    extends RuntimeReplaceable
+    with ImplicitCastInputTypes
+    with TernaryLike[Expression] {
+
+    def this(sketchExpr: Expression, splitPointsExpr: Expression) = {
+        this(sketchExpr, splitPointsExpr, Literal(true))
+    }
+
+    override def first: Expression = sketchExpr
+    override def second: Expression = splitPointsExpr
+    override def third: Expression = isInclusiveExpr
+
+    override lazy val replacement: Expression = KllGetPmfCdf(sketchExpr, splitPointsExpr, isInclusiveExpr, false)
+    override def inputTypes: Seq[AbstractDataType] = Seq(KllDoublesSketchType, ArrayType(DoubleType), BooleanType)
+    override protected def withNewChildrenInternal(newFirst: Expression, newSecond: Expression, newThird: Expression): Expression = {
+        copy(sketchExpr = newFirst, splitPointsExpr = newSecond, isInclusiveExpr = newThird)
+    }
+}
+
 
 /**
   * Returns the PMF and CDF of the given quantile search criteria.
   *
-  * @param left A KllDoublesSketch sketch, in serialized form
-  * @param right An array of split points, as doubles
-  * @param isInclusive If true, use INCLUSIVE else EXCLUSIVE
+  * @param sketchExpr A KllDoublesSketch sketch, in serialized form
+  * @param splitPointsExpr An array of split points, as doubles
+  * @param isInclusiveExpr A boolean flag for inclusive mode. If true, use INCLUSIVE else EXCLUSIVE
   * @param isPmf Whether to return the PMF (true) or CDF (false)
   */
 @ExpressionDescription(
@@ -149,29 +224,52 @@ case class KllGetMax(child: Expression)
        [0.3333333333333333, 0.6666666666666666, 0.0]
   """
 )
-case class KllGetPmfCdf(left: Expression,
-                        right: Expression,
-                        isInclusive: Boolean = true,
+case class KllGetPmfCdf(sketchExpr: Expression,
+                        splitPointsExpr: Expression,
+                        isInclusiveExpr: Expression,
                         isPmf: Boolean = false)
- extends BinaryExpression
+ extends TernaryExpression
  with ExpectsInputTypes
  with NullIntolerant
  with ImplicitCastInputTypes {
 
-  override protected def withNewChildrenInternal(newLeft: Expression,
-                                              newRight: Expression) = {
-    copy(left = newLeft, right = newRight, isInclusive = isInclusive, isPmf = isPmf)
+  lazy val isInclusive = third.eval().asInstanceOf[Boolean]
+
+  override def first: Expression = sketchExpr
+  override def second: Expression = splitPointsExpr
+  override def third: Expression = isInclusiveExpr
+
+  override protected def withNewChildrenInternal(newFirst: Expression,
+                                                 newSecond: Expression,
+                                                 newThird: Expression) = {
+    copy(sketchExpr = newFirst, splitPointsExpr = newSecond, isInclusiveExpr = newThird, isPmf = isPmf)
   }
 
   override def prettyName: String = "kll_get_pmf_cdf"
 
-  override def inputTypes: Seq[AbstractDataType] = Seq(KllDoublesSketchType, ArrayType(DoubleType))
+  override def inputTypes: Seq[AbstractDataType] = Seq(KllDoublesSketchType, ArrayType(DoubleType), BooleanType)
 
   override def dataType: DataType = ArrayType(DoubleType, containsNull = false)
 
-  override def nullSafeEval(leftInput: Any, rightInput: Any): Any = {
-    val sketchBytes = leftInput.asInstanceOf[Array[Byte]]
-    val splitPoints = rightInput.asInstanceOf[GenericArrayData].toDoubleArray
+  // letting underlying library validate input types, not defining checkInputDataTypes() here
+  override def checkInputDataTypes(): TypeCheckResult = {
+    // splitPints and isInclusive must be a constant
+    if (!splitPointsExpr.foldable) {
+      return TypeCheckResult.TypeCheckFailure(s"splitPointsExpr must be foldable, but got: ${splitPointsExpr}")
+    }
+    if (!isInclusiveExpr.foldable) {
+      return TypeCheckResult.TypeCheckFailure(s"isInclusiveExpr must be foldable, but got: ${isInclusiveExpr}")
+    }
+    if (splitPointsExpr.eval().asInstanceOf[GenericArrayData].numElements == 0) {
+      return TypeCheckResult.TypeCheckFailure(s"splitPointsExpr must not be empty")
+    }
+
+    TypeCheckResult.TypeCheckSuccess
+  }
+
+  override def nullSafeEval(sketchInput: Any, splitPointsInput: Any, isInclusiveInput: Any): Any = {
+    val sketchBytes = sketchInput.asInstanceOf[Array[Byte]]
+    val splitPoints = splitPointsInput.asInstanceOf[GenericArrayData].toDoubleArray
     val sketch = KllDoublesSketch.wrap(Memory.wrap(sketchBytes))
 
     val result: Array[Double] =
@@ -183,30 +281,27 @@ case class KllGetPmfCdf(left: Expression,
     new GenericArrayData(result)
   }
 
-  override protected def nullSafeCodeGen(ctx: CodegenContext, ev: ExprCode, f: (String, String) => String): ExprCode = {
-    val sketchEval = left.genCode(ctx)
+  override protected def nullSafeCodeGen(ctx: CodegenContext, ev: ExprCode, f: (String, String, String) => String): ExprCode = {
+    val sketchEval = sketchExpr.genCode(ctx)
     val sketch = ctx.freshName("sketch")
-    val splitPointsEval = right.genCode(ctx)
+    val splitPointsEval = splitPointsExpr.genCode(ctx)
     val code =
       s"""
          |${sketchEval.code}
          |${splitPointsEval.code}
-         |if (${sketchEval.isNull} || ${splitPointsEval.isNull}) {
-         |  ${ev.isNull} = true;
-         |} else {
-         |  QuantileSearchCriteria searchCriteria = ${if (isInclusive) "QuantileSearchCriteria.INCLUSIVE" else "QuantileSearchCriteria.EXCLUSIVE"};
-         |  final org.apache.datasketches.kll.KllDoublesSketch $sketch = org.apache.spark.sql.types.KllDoublesSketchWrapper.wrapAsReadOnlySketch(${sketchEval.value});
+         |if (!${sketchEval.isNull} && !${splitPointsEval.isNull}) {
+         |  org.apache.datasketches.quantilescommon.QuantileSearchCriteria searchCriteria = ${if (isInclusive) "org.apache.datasketches.quantilescommon.QuantileSearchCriteria.INCLUSIVE" else "org.apache.datasketches.quantilescommon.QuantileSearchCriteria.EXCLUSIVE"};
+         |  final org.apache.datasketches.kll.KllDoublesSketch $sketch = org.apache.spark.sql.types.KllDoublesSketchType.wrap(${sketchEval.value});
          |  final double[] splitPoints = ((org.apache.spark.sql.catalyst.util.GenericArrayData)${splitPointsEval.value}).toDoubleArray();
          |  final double[] result = ${if (isPmf) s"$sketch.getPMF(splitPoints, searchCriteria)" else s"$sketch.getCDF(splitPoints, searchCriteria)"};
-         |  GenericArrayData ${ev.value} = new GenericArrayData(result);
-         |  ${ev.isNull} = false;
+         |  org.apache.spark.sql.catalyst.util.GenericArrayData ${ev.value} = new org.apache.spark.sql.catalyst.util.GenericArrayData(result);
          |}
        """.stripMargin
     ev.copy(code = CodeBlock(Seq(code), Seq.empty))
   }
 
   override def doGenCode(ctx: CodegenContext, ev: ExprCode): ExprCode = {
-    nullSafeCodeGen(ctx, ev, (arg1, arg2) => s"($arg1, $arg2)")
+    nullSafeCodeGen(ctx, ev, (arg1, arg2, arg3) => s"($arg1, $arg2, $arg3)")
   }
 }
 

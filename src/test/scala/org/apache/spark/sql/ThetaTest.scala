@@ -17,8 +17,8 @@
 
 package org.apache.spark.sql
 
-import org.apache.spark.sql.functions_ds._
-import org.apache.spark.registrar.DatasketchesFunctionRegistry
+import org.apache.spark.sql.functions_datasketches_theta._
+import org.apache.spark.sql.registrar.ThetaFunctionRegistry
 
 class ThetaTest extends SparkSessionManager {
   import spark.implicits._
@@ -34,7 +34,7 @@ class ThetaTest extends SparkSessionManager {
   }
 
   test("Theta Sketch build via SQL default lgk") {
-    DatasketchesFunctionRegistry.registerFunctions(spark)
+    ThetaFunctionRegistry.registerFunctions(spark)
 
     val n = 100
     val data = (for (i <- 1 to n) yield i).toDF("value")
@@ -50,7 +50,7 @@ class ThetaTest extends SparkSessionManager {
   }
 
   test("Theta Sketch build via SQL with lgk") {
-    DatasketchesFunctionRegistry.registerFunctions(spark)
+    ThetaFunctionRegistry.registerFunctions(spark)
 
     val n = 100
     val data = (for (i <- 1 to n) yield i).toDF("value")

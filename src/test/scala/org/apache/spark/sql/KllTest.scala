@@ -22,10 +22,10 @@ import org.apache.spark.sql.functions._
 import scala.collection.mutable.WrappedArray
 import org.apache.spark.sql.types.{StructType, StructField, IntegerType, BinaryType}
 
-import org.apache.spark.sql.functions_ds._
+import org.apache.spark.sql.functions_datasketches_kll._
 import org.apache.datasketches.kll.KllDoublesSketch
 import org.apache.spark.sql.types.KllDoublesSketchType
-import org.apache.spark.registrar.DatasketchesFunctionRegistry
+import org.apache.spark.sql.registrar.KllFunctionRegistry
 
 class KllTest extends SparkSessionManager {
   import spark.implicits._
@@ -119,8 +119,8 @@ class KllTest extends SparkSessionManager {
   }
 
   test("Kll Doubles Sketch via SQL") {
-    // register Datasketches functions
-    DatasketchesFunctionRegistry.registerFunctions(spark)
+    // register KLL functions
+    KllFunctionRegistry.registerFunctions(spark)
 
     val n = 100
     val data = (for (i <- 1 to n) yield i.toDouble).toDF("value")
@@ -212,8 +212,8 @@ class KllTest extends SparkSessionManager {
   }
 
   test("KLL Doubles Merge via SQL") {
-    // register Datasketches functions
-    DatasketchesFunctionRegistry.registerFunctions(spark)
+    // register KLL functions
+    KllFunctionRegistry.registerFunctions(spark)
 
     val data = generateData().toDF()
     data.createOrReplaceTempView("data_table")

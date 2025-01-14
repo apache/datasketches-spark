@@ -20,13 +20,11 @@ package org.apache.spark.sql.expressions
 import org.apache.datasketches.memory.Memory
 import org.apache.datasketches.theta.Sketch
 
-import org.apache.spark.sql.catalyst.expressions.{Expression, ExpectsInputTypes, UnaryExpression, BinaryExpression}
+import org.apache.spark.sql.catalyst.expressions.{Expression, ExpectsInputTypes, UnaryExpression}
 import org.apache.spark.sql.catalyst.expressions.NullIntolerant
 import org.apache.spark.sql.catalyst.expressions.ExpressionDescription
-import org.apache.spark.sql.catalyst.expressions.ImplicitCastInputTypes
 import org.apache.spark.sql.catalyst.expressions.codegen.{CodeBlock, CodegenContext, ExprCode}
-import org.apache.spark.sql.catalyst.util.GenericArrayData
-import org.apache.spark.sql.types.{AbstractDataType, DataType, ArrayType, DoubleType, ThetaSketchType}
+import org.apache.spark.sql.types.{AbstractDataType, DataType, DoubleType, ThetaSketchType}
 
 @ExpressionDescription(
   usage = """

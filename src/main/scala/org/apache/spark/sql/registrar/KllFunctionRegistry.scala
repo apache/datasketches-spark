@@ -20,16 +20,16 @@ package org.apache.spark.sql.registrar
 import org.apache.spark.sql.catalyst.analysis.FunctionRegistry.FunctionBuilder
 import org.apache.spark.sql.catalyst.expressions.{ExpressionInfo}
 
-import org.apache.spark.sql.aggregate.{KllDoublesSketchAgg, KllDoublesMergeAgg}
-import org.apache.spark.sql.expressions.{KllGetMin, KllGetMax, KllGetPmf, KllGetCdf}
+import org.apache.spark.sql.aggregate.{KllDoublesSketchAgg, KllDoublesSketchMergeAgg}
+import org.apache.spark.sql.expressions.{KllDoublesSketchGetMin, KllDoublesSketchGetMax, KllDoublesSketchGetPmf, KllDoublesSketchGetCdf}
 
 object KllFunctionRegistry extends DatasketchesFunctionRegistry {
   override val expressions: Map[String, (ExpressionInfo, FunctionBuilder)] = Map(
-    expression[KllDoublesSketchAgg]("kll_sketch_agg"),
-    expression[KllDoublesMergeAgg]("kll_merge_agg"),
-    expression[KllGetMin]("kll_get_min"),
-    expression[KllGetMax]("kll_get_max"),
-    expression[KllGetPmf]("kll_get_pmf"),
-    expression[KllGetCdf]("kll_get_cdf"),
+    expression[KllDoublesSketchAgg]("kll_sketch_double_agg"),
+    expression[KllDoublesSketchMergeAgg]("kll_sketch_double_merge_agg"),
+    expression[KllDoublesSketchGetMin]("kll_sketch_double_get_min"),
+    expression[KllDoublesSketchGetMax]("kll_sketch_double_get_max"),
+    expression[KllDoublesSketchGetPmf]("kll_sketch_double_get_pmf"),
+    expression[KllDoublesSketchGetCdf]("kll_sketch_double_get_cdf"),
   )
 }

@@ -98,7 +98,7 @@ case class KllDoublesSketchAgg(
   // overrides for TypedImperativeAggregate
   override lazy val deterministic: Boolean = false
 
-  override def prettyName: String = "kll_sketch_agg"
+  override def prettyName: String = "kll_sketch_double_agg"
 
   override def dataType: DataType = KllDoublesSketchType
 

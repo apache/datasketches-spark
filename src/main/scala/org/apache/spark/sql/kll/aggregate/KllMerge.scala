@@ -48,7 +48,7 @@ import org.apache.spark.sql.catalyst.analysis.TypeCheckResult
   //group = "agg_funcs",
 )
 // scalastyle:on line.size.limit
-case class KllDoublesMergeAgg(
+case class KllDoublesSketchMergeAgg(
     sketchExpr: Expression,
     kExpr: Expression,
     mutableAggBufferOffset: Int = 0,
@@ -86,17 +86,17 @@ case class KllDoublesMergeAgg(
   }
 
   // Copy constructors
-  override def withNewMutableAggBufferOffset(newMutableAggBufferOffset: Int): KllDoublesMergeAgg =
+  override def withNewMutableAggBufferOffset(newMutableAggBufferOffset: Int): KllDoublesSketchMergeAgg =
     copy(mutableAggBufferOffset = newMutableAggBufferOffset)
 
-  override def withNewInputAggBufferOffset(newInputAggBufferOffset: Int): KllDoublesMergeAgg =
+  override def withNewInputAggBufferOffset(newInputAggBufferOffset: Int): KllDoublesSketchMergeAgg =
     copy(inputAggBufferOffset = newInputAggBufferOffset)
 
-  override protected def withNewChildrenInternal(newLeft: Expression, newRight: Expression): KllDoublesMergeAgg =
+  override protected def withNewChildrenInternal(newLeft: Expression, newRight: Expression): KllDoublesSketchMergeAgg =
     copy(sketchExpr = newLeft, kExpr = newRight)
 
   // overrides for TypedImperativeAggregate
-  override def prettyName: String = "kll_merge_agg"
+  override def prettyName: String = "kll_sketch_double_merge_agg"
 
   override def dataType: DataType = KllDoublesSketchType
 

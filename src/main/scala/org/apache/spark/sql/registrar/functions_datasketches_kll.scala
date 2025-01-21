@@ -21,135 +21,135 @@ import org.apache.spark.sql.catalyst.expressions.Literal
 import org.apache.spark.sql.functions.lit
 import org.apache.spark.sql.types.{ArrayType, BooleanType, DoubleType}
 
-import org.apache.spark.sql.aggregate.{KllDoublesMergeAgg, KllDoublesSketchAgg}
-import org.apache.spark.sql.expressions.{KllGetMin, KllGetMax, KllGetPmfCdf}
+import org.apache.spark.sql.aggregate.{KllDoublesSketchMergeAgg, KllDoublesSketchAgg}
+import org.apache.spark.sql.expressions.{KllDoublesSketchGetMin, KllDoublesSketchGetMax, KllDoublesSketchGetPmfCdf}
 
 object functions_datasketches_kll extends DatasketchesScalaFunctionBase {
 
   // get min
-  def kll_get_min(expr: Column): Column = withExpr {
-    new KllGetMin(expr.expr)
+  def kll_sketch_double_get_min(expr: Column): Column = withExpr {
+    new KllDoublesSketchGetMin(expr.expr)
   }
 
-  def kll_get_min(columnName: String): Column = {
-    kll_get_min(Column(columnName))
+  def kll_sketch_double_get_min(columnName: String): Column = {
+    kll_sketch_double_get_min(Column(columnName))
   }
 
   // get max
-  def kll_get_max(expr: Column): Column = withExpr {
-    new KllGetMax(expr.expr)
+  def kll_sketch_double_get_max(expr: Column): Column = withExpr {
+    new KllDoublesSketchGetMax(expr.expr)
   }
 
-  def kll_get_max(columnName: String): Column = {
-    kll_get_max(Column(columnName))
+  def kll_sketch_double_get_max(columnName: String): Column = {
+    kll_sketch_double_get_max(Column(columnName))
   }
 
   // build sketch
-  def kll_sketch_agg(expr: Column, k: Column): Column = withAggregateFunction {
+  def kll_sketch_double_agg(expr: Column, k: Column): Column = withAggregateFunction {
     new KllDoublesSketchAgg(expr.expr, k.expr)
   }
 
-  def kll_sketch_agg(expr: Column, k: Int): Column = {
-    kll_sketch_agg(expr, lit(k))
+  def kll_sketch_double_agg(expr: Column, k: Int): Column = {
+    kll_sketch_double_agg(expr, lit(k))
   }
 
-  def kll_sketch_agg(columnName: String, k: Int): Column = {
-    kll_sketch_agg(Column(columnName), k)
+  def kll_sketch_double_agg(columnName: String, k: Int): Column = {
+    kll_sketch_double_agg(Column(columnName), k)
   }
 
-  def kll_sketch_agg(expr: Column): Column = withAggregateFunction {
+  def kll_sketch_double_agg(expr: Column): Column = withAggregateFunction {
     new KllDoublesSketchAgg(expr.expr)
   }
 
-  def kll_sketch_agg(columnName: String): Column = {
-    kll_sketch_agg(Column(columnName))
+  def kll_sketch_double_agg(columnName: String): Column = {
+    kll_sketch_double_agg(Column(columnName))
   }
 
   // merge sketches
-  def kll_merge_agg(expr: Column): Column = withAggregateFunction {
-    new KllDoublesMergeAgg(expr.expr)
+  def kll_sketch_double_merge_agg(expr: Column): Column = withAggregateFunction {
+    new KllDoublesSketchMergeAgg(expr.expr)
   }
 
-  def kll_merge_agg(columnName: String): Column = {
-    kll_merge_agg(Column(columnName))
+  def kll_sketch_double_merge_agg(columnName: String): Column = {
+    kll_sketch_double_merge_agg(Column(columnName))
   }
 
-  def kll_merge_agg(expr: Column, k: Column): Column = withAggregateFunction {
-    new KllDoublesMergeAgg(expr.expr, k.expr)
+  def kll_sketch_double_merge_agg(expr: Column, k: Column): Column = withAggregateFunction {
+    new KllDoublesSketchMergeAgg(expr.expr, k.expr)
   }
 
-  def kll_merge_agg(expr: Column, k: Int): Column = withAggregateFunction {
-    new KllDoublesMergeAgg(expr.expr, lit(k).expr)
+  def kll_sketch_double_merge_agg(expr: Column, k: Int): Column = withAggregateFunction {
+    new KllDoublesSketchMergeAgg(expr.expr, lit(k).expr)
   }
 
-  def kll_merge_agg(columnName: String, k: Int): Column = {
-    kll_merge_agg(Column(columnName), lit(k))
+  def kll_sketch_double_merge_agg(columnName: String, k: Int): Column = {
+    kll_sketch_double_merge_agg(Column(columnName), lit(k))
   }
 
   // get PMF
-  def kll_get_pmf(sketch: Column, splitPoints: Column, isInclusive: Boolean): Column = withExpr {
-    new KllGetPmfCdf(sketch.expr, splitPoints.expr, Literal.create(isInclusive, BooleanType), true)
+  def kll_sketch_double_get_pmf(sketch: Column, splitPoints: Column, isInclusive: Boolean): Column = withExpr {
+    new KllDoublesSketchGetPmfCdf(sketch.expr, splitPoints.expr, Literal.create(isInclusive, BooleanType), true)
   }
 
-  def kll_get_pmf(sketch: Column, splitPoints: Column): Column = withExpr {
-    new KllGetPmfCdf(sketch.expr, splitPoints.expr, Literal(true), true)
+  def kll_sketch_double_get_pmf(sketch: Column, splitPoints: Column): Column = withExpr {
+    new KllDoublesSketchGetPmfCdf(sketch.expr, splitPoints.expr, Literal(true), true)
   }
 
-  def kll_get_pmf(columnName: String, splitPoints: Column, isInclusive: Boolean): Column = {
-    kll_get_pmf(Column(columnName), splitPoints, isInclusive)
+  def kll_sketch_double_get_pmf(columnName: String, splitPoints: Column, isInclusive: Boolean): Column = {
+    kll_sketch_double_get_pmf(Column(columnName), splitPoints, isInclusive)
   }
 
-  def kll_get_pmf(columnName: String, splitPoints: Column): Column = {
-    kll_get_pmf(Column(columnName), splitPoints)
+  def kll_sketch_double_get_pmf(columnName: String, splitPoints: Column): Column = {
+    kll_sketch_double_get_pmf(Column(columnName), splitPoints)
   }
 
-  def kll_get_pmf(sketch: Column, splitPoints: Array[Double], isInclusive: Boolean): Column = {
-    kll_get_pmf(sketch, Column(Literal.create(splitPoints, ArrayType(DoubleType))), isInclusive)
+  def kll_sketch_double_get_pmf(sketch: Column, splitPoints: Array[Double], isInclusive: Boolean): Column = {
+    kll_sketch_double_get_pmf(sketch, Column(Literal.create(splitPoints, ArrayType(DoubleType))), isInclusive)
   }
 
-  def kll_get_pmf(sketch: Column, splitPoints: Array[Double]): Column = {
-    kll_get_pmf(sketch, Column(Literal.create(splitPoints, ArrayType(DoubleType))))
+  def kll_sketch_double_get_pmf(sketch: Column, splitPoints: Array[Double]): Column = {
+    kll_sketch_double_get_pmf(sketch, Column(Literal.create(splitPoints, ArrayType(DoubleType))))
   }
 
-  def kll_get_pmf(columnName: String, splitPoints: Array[Double], isInclusive: Boolean): Column = {
-    kll_get_pmf(Column(columnName), splitPoints, isInclusive)
+  def kll_sketch_double_get_pmf(columnName: String, splitPoints: Array[Double], isInclusive: Boolean): Column = {
+    kll_sketch_double_get_pmf(Column(columnName), splitPoints, isInclusive)
   }
 
-  def kll_get_pmf(columnName: String, splitPoints: Array[Double]): Column = {
-    kll_get_pmf(Column(columnName), splitPoints)
+  def kll_sketch_double_get_pmf(columnName: String, splitPoints: Array[Double]): Column = {
+    kll_sketch_double_get_pmf(Column(columnName), splitPoints)
   }
 
 
   // get CDF
-  def kll_get_cdf(sketch: Column, splitPoints: Column, isInclusive: Boolean): Column = withExpr {
-    new KllGetPmfCdf(sketch.expr, splitPoints.expr, Literal.create(isInclusive, BooleanType), false)
+  def kll_sketch_double_get_cdf(sketch: Column, splitPoints: Column, isInclusive: Boolean): Column = withExpr {
+    new KllDoublesSketchGetPmfCdf(sketch.expr, splitPoints.expr, Literal.create(isInclusive, BooleanType), false)
   }
 
-  def kll_get_cdf(sketch: Column, splitPoints: Column): Column = withExpr {
-    new KllGetPmfCdf(sketch.expr, splitPoints.expr, Literal(true), false)
+  def kll_sketch_double_get_cdf(sketch: Column, splitPoints: Column): Column = withExpr {
+    new KllDoublesSketchGetPmfCdf(sketch.expr, splitPoints.expr, Literal(true), false)
   }
 
-  def kll_get_cdf(columnName: String, splitPoints: Column, isInclusive: Boolean): Column = {
-    kll_get_cdf(Column(columnName), splitPoints, isInclusive)
+  def kll_sketch_double_get_cdf(columnName: String, splitPoints: Column, isInclusive: Boolean): Column = {
+    kll_sketch_double_get_cdf(Column(columnName), splitPoints, isInclusive)
   }
 
-  def kll_get_cdf(columnName: String, splitPoints: Column): Column = {
-    kll_get_cdf(Column(columnName), splitPoints)
+  def kll_sketch_double_get_cdf(columnName: String, splitPoints: Column): Column = {
+    kll_sketch_double_get_cdf(Column(columnName), splitPoints)
   }
 
-  def kll_get_cdf(sketch: Column, splitPoints: Array[Double], isInclusive: Boolean): Column = {
-    kll_get_cdf(sketch, Column(Literal.create(splitPoints, ArrayType(DoubleType))), isInclusive)
+  def kll_sketch_double_get_cdf(sketch: Column, splitPoints: Array[Double], isInclusive: Boolean): Column = {
+    kll_sketch_double_get_cdf(sketch, Column(Literal.create(splitPoints, ArrayType(DoubleType))), isInclusive)
   }
 
-  def kll_get_cdf(sketch: Column, splitPoints: Array[Double]): Column = {
-    kll_get_cdf(sketch, Column(Literal.create(splitPoints, ArrayType(DoubleType))))
+  def kll_sketch_double_get_cdf(sketch: Column, splitPoints: Array[Double]): Column = {
+    kll_sketch_double_get_cdf(sketch, Column(Literal.create(splitPoints, ArrayType(DoubleType))))
   }
 
-  def kll_get_cdf(columnName: String, splitPoints: Array[Double], isInclusive: Boolean): Column = {
-    kll_get_cdf(Column(columnName), splitPoints, isInclusive)
+  def kll_sketch_double_get_cdf(columnName: String, splitPoints: Array[Double], isInclusive: Boolean): Column = {
+    kll_sketch_double_get_cdf(Column(columnName), splitPoints, isInclusive)
   }
 
-  def kll_get_cdf(columnName: String, splitPoints: Array[Double]): Column = {
-    kll_get_cdf(Column(columnName), splitPoints)
+  def kll_sketch_double_get_cdf(columnName: String, splitPoints: Array[Double]): Column = {
+    kll_sketch_double_get_cdf(Column(columnName), splitPoints)
   }
 }

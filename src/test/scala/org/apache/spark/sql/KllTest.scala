@@ -87,9 +87,9 @@ class KllTest extends SparkSessionManager {
     val n = 100
     val data = (for (i <- 1 to n) yield i.toDouble).toDF("value")
 
-    val sketchDf = data.agg(kll_sketch_agg("value").as("sketch"))
-    val result: Row = sketchDf.select(kll_get_min($"sketch").as("min"),
-                                      kll_get_max($"sketch").as("max")
+    val sketchDf = data.agg(kll_sketch_double_agg("value").as("sketch"))
+    val result: Row = sketchDf.select(kll_sketch_double_get_min($"sketch").as("min"),
+                                      kll_sketch_double_get_max($"sketch").as("max")
                                       ).head
 
     val minValue = result.getAs[Double]("min")
@@ -99,10 +99,10 @@ class KllTest extends SparkSessionManager {
 
     val splitPoints = Array[Double](20.5, 50, 102)
     val pmfCdfResult = sketchDf.select(
-      kll_get_pmf($"sketch", splitPoints).as("pmf_inclusive"),
-      kll_get_pmf($"sketch", splitPoints, false).as("pmf_exclusive"),
-      kll_get_cdf($"sketch", splitPoints).as("cdf_inclusive"),
-      kll_get_cdf($"sketch", splitPoints, false).as("cdf_exclusive")
+      kll_sketch_double_get_pmf($"sketch", splitPoints).as("pmf_inclusive"),
+      kll_sketch_double_get_pmf($"sketch", splitPoints, false).as("pmf_exclusive"),
+      kll_sketch_double_get_cdf($"sketch", splitPoints).as("cdf_inclusive"),
+      kll_sketch_double_get_cdf($"sketch", splitPoints, false).as("cdf_exclusive")
     ).head
 
     val pmf_incl = Array[Double](0.2, 0.3, 0.5, 0.0)
@@ -129,8 +129,8 @@ class KllTest extends SparkSessionManager {
     val kllDf = spark.sql(
       s"""
       |SELECT
-      |  kll_get_min(kll_sketch_agg(value, 200)) AS min,
-      |  kll_get_max(kll_sketch_agg(value, 200)) AS max
+      |  kll_sketch_double_get_min(kll_sketch_double_agg(value, 200)) AS min,
+      |  kll_sketch_double_get_max(kll_sketch_double_agg(value, 200)) AS max
       |FROM
       |  data_table
     """.stripMargin
@@ -144,13 +144,13 @@ class KllTest extends SparkSessionManager {
     val pmfCdfResult = spark.sql(
       s"""
       |SELECT
-      |  kll_get_pmf(t.sketch, ${splitPoints}) AS pmf_inclusive,
-      |  kll_get_pmf(t.sketch, ${splitPoints}, false) AS pmf_exclusive,
-      |  kll_get_cdf(t.sketch, ${splitPoints}) AS cdf_inclusive,
-      |  kll_get_cdf(t.sketch, ${splitPoints}, false) AS cdf_exclusive
+      |  kll_sketch_double_get_pmf(t.sketch, ${splitPoints}) AS pmf_inclusive,
+      |  kll_sketch_double_get_pmf(t.sketch, ${splitPoints}, false) AS pmf_exclusive,
+      |  kll_sketch_double_get_cdf(t.sketch, ${splitPoints}) AS cdf_inclusive,
+      |  kll_sketch_double_get_cdf(t.sketch, ${splitPoints}, false) AS cdf_exclusive
       |FROM
       |  (SELECT
-      |     kll_sketch_agg(value, 200) sketch
+      |     kll_sketch_double_agg(value, 200) sketch
       |   FROM
       |     data_table) t
       """.stripMargin
@@ -178,15 +178,15 @@ class KllTest extends SparkSessionManager {
     val globalMax = minMax.getAs[Double]("max")
 
     // create a sketch for each id value
-    val idSketchDf = data.groupBy($"id").agg(kll_sketch_agg($"value").as("sketch"))
+    val idSketchDf = data.groupBy($"id").agg(kll_sketch_double_agg($"value").as("sketch"))
 
     // default k
     // merge into an aggregate sketch
-    var mergedSketchDf = idSketchDf.agg(kll_merge_agg($"sketch").as("sketch"))
+    var mergedSketchDf = idSketchDf.agg(kll_sketch_double_merge_agg($"sketch").as("sketch"))
 
     // check min and max
-    var result: Row = mergedSketchDf.select(kll_get_min($"sketch").as("min"),
-                                            kll_get_max($"sketch").as("max"))
+    var result: Row = mergedSketchDf.select(kll_sketch_double_get_min($"sketch").as("min"),
+                                            kll_sketch_double_get_max($"sketch").as("max"))
                                     .head
 
     var sketchMin = result.getAs[Double]("min")
@@ -197,11 +197,11 @@ class KllTest extends SparkSessionManager {
 
     // specified k
     // merge into an aggregate sketch
-    mergedSketchDf = idSketchDf.agg(kll_merge_agg($"sketch", 160).as("sketch"))
+    mergedSketchDf = idSketchDf.agg(kll_sketch_double_merge_agg($"sketch", 160).as("sketch"))
 
     // check min and max
-    result = mergedSketchDf.select(kll_get_min($"sketch").as("min"),
-                                   kll_get_max($"sketch").as("max"))
+    result = mergedSketchDf.select(kll_sketch_double_get_min($"sketch").as("min"),
+                                   kll_sketch_double_get_max($"sketch").as("max"))
                            .head
 
     sketchMin = result.getAs[Double]("min")
@@ -229,7 +229,7 @@ class KllTest extends SparkSessionManager {
       s"""
       |SELECT
       |  id,
-      |  kll_sketch_agg(value, 200) AS sketch
+      |  kll_sketch_double_agg(value, 200) AS sketch
       |FROM
       |  data_table
       |GROUP BY
@@ -243,11 +243,11 @@ class KllTest extends SparkSessionManager {
     var mergedSketchDf = spark.sql(
       s"""
       |SELECT
-      |  kll_get_min(sub.sketch) AS min,
-      |  kll_get_max(sub.sketch) AS max
+      |  kll_sketch_double_get_min(sub.sketch) AS min,
+      |  kll_sketch_double_get_max(sub.sketch) AS max
       |FROM
       |  (SELECT
-      |     kll_merge_agg(sketch) AS sketch
+      |     kll_sketch_double_merge_agg(sketch) AS sketch
       |  FROM
       |    sketch_table
       |  ) sub
@@ -267,11 +267,11 @@ class KllTest extends SparkSessionManager {
     mergedSketchDf = spark.sql(
       s"""
       |SELECT
-      |  kll_get_min(sub.sketch) AS min,
-      |  kll_get_max(sub.sketch) AS max
+      |  kll_sketch_double_get_min(sub.sketch) AS min,
+      |  kll_sketch_double_get_max(sub.sketch) AS max
       |FROM
       |  (SELECT
-      |     kll_merge_agg(sketch, 160) AS sketch
+      |     kll_sketch_double_merge_agg(sketch, 160) AS sketch
       |  FROM
       |    sketch_table
       |  ) sub

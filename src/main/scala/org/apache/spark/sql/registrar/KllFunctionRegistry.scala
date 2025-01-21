@@ -25,8 +25,8 @@ import org.apache.spark.sql.expressions.{KllDoublesSketchGetMin, KllDoublesSketc
 
 object KllFunctionRegistry extends DatasketchesFunctionRegistry {
   override val expressions: Map[String, (ExpressionInfo, FunctionBuilder)] = Map(
-    expression[KllDoublesSketchAgg]("kll_sketch_double_agg"),
-    expression[KllDoublesSketchMergeAgg]("kll_sketch_double_merge_agg"),
+    expression[KllDoublesSketchAgg]("kll_sketch_double_agg_build"),
+    expression[KllDoublesSketchMergeAgg]("kll_sketch_double_agg_merge"),
     expression[KllDoublesSketchGetMin]("kll_sketch_double_get_min"),
     expression[KllDoublesSketchGetMax]("kll_sketch_double_get_max"),
     expression[KllDoublesSketchGetPmf]("kll_sketch_double_get_pmf"),

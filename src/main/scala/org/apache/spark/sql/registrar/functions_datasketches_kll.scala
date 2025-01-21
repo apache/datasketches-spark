@@ -26,6 +26,48 @@ import org.apache.spark.sql.expressions.{KllDoublesSketchGetMin, KllDoublesSketc
 
 object functions_datasketches_kll extends DatasketchesScalaFunctionBase {
 
+  // build sketch
+  def kll_sketch_double_agg_build(expr: Column, k: Column): Column = withAggregateFunction {
+    new KllDoublesSketchAgg(expr.expr, k.expr)
+  }
+
+  def kll_sketch_double_agg_build(expr: Column, k: Int): Column = {
+    kll_sketch_double_agg_build(expr, lit(k))
+  }
+
+  def kll_sketch_double_agg_build(columnName: String, k: Int): Column = {
+    kll_sketch_double_agg_build(Column(columnName), k)
+  }
+
+  def kll_sketch_double_agg_build(expr: Column): Column = withAggregateFunction {
+    new KllDoublesSketchAgg(expr.expr)
+  }
+
+  def kll_sketch_double_agg_build(columnName: String): Column = {
+    kll_sketch_double_agg_build(Column(columnName))
+  }
+
+  // merge sketches
+  def kll_sketch_double_agg_merge(expr: Column): Column = withAggregateFunction {
+    new KllDoublesSketchMergeAgg(expr.expr)
+  }
+
+  def kll_sketch_double_agg_merge(columnName: String): Column = {
+    kll_sketch_double_agg_merge(Column(columnName))
+  }
+
+  def kll_sketch_double_agg_merge(expr: Column, k: Column): Column = withAggregateFunction {
+    new KllDoublesSketchMergeAgg(expr.expr, k.expr)
+  }
+
+  def kll_sketch_double_agg_merge(expr: Column, k: Int): Column = withAggregateFunction {
+    new KllDoublesSketchMergeAgg(expr.expr, lit(k).expr)
+  }
+
+  def kll_sketch_double_agg_merge(columnName: String, k: Int): Column = {
+    kll_sketch_double_agg_merge(Column(columnName), lit(k))
+  }
+
   // get min
   def kll_sketch_double_get_min(expr: Column): Column = withExpr {
     new KllDoublesSketchGetMin(expr.expr)
@@ -42,48 +84,6 @@ object functions_datasketches_kll extends DatasketchesScalaFunctionBase {
 
   def kll_sketch_double_get_max(columnName: String): Column = {
     kll_sketch_double_get_max(Column(columnName))
-  }
-
-  // build sketch
-  def kll_sketch_double_agg(expr: Column, k: Column): Column = withAggregateFunction {
-    new KllDoublesSketchAgg(expr.expr, k.expr)
-  }
-
-  def kll_sketch_double_agg(expr: Column, k: Int): Column = {
-    kll_sketch_double_agg(expr, lit(k))
-  }
-
-  def kll_sketch_double_agg(columnName: String, k: Int): Column = {
-    kll_sketch_double_agg(Column(columnName), k)
-  }
-
-  def kll_sketch_double_agg(expr: Column): Column = withAggregateFunction {
-    new KllDoublesSketchAgg(expr.expr)
-  }
-
-  def kll_sketch_double_agg(columnName: String): Column = {
-    kll_sketch_double_agg(Column(columnName))
-  }
-
-  // merge sketches
-  def kll_sketch_double_merge_agg(expr: Column): Column = withAggregateFunction {
-    new KllDoublesSketchMergeAgg(expr.expr)
-  }
-
-  def kll_sketch_double_merge_agg(columnName: String): Column = {
-    kll_sketch_double_merge_agg(Column(columnName))
-  }
-
-  def kll_sketch_double_merge_agg(expr: Column, k: Column): Column = withAggregateFunction {
-    new KllDoublesSketchMergeAgg(expr.expr, k.expr)
-  }
-
-  def kll_sketch_double_merge_agg(expr: Column, k: Int): Column = withAggregateFunction {
-    new KllDoublesSketchMergeAgg(expr.expr, lit(k).expr)
-  }
-
-  def kll_sketch_double_merge_agg(columnName: String, k: Int): Column = {
-    kll_sketch_double_merge_agg(Column(columnName), lit(k))
   }
 
   // get PMF

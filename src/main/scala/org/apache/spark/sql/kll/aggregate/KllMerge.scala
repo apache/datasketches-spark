@@ -96,7 +96,7 @@ case class KllDoublesSketchMergeAgg(
     copy(sketchExpr = newLeft, kExpr = newRight)
 
   // overrides for TypedImperativeAggregate
-  override def prettyName: String = "kll_sketch_double_merge_agg"
+  override def prettyName: String = "kll_sketch_double_agg_merge"
 
   override def dataType: DataType = KllDoublesSketchType
 

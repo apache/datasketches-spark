@@ -25,7 +25,7 @@ description := "The Apache DataSketches package for Spark"
 licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0"))
 
 val sparkVersion = settingKey[String]("The version of Spark")
-sparkVersion := sys.env.getOrElse("SPARK_VERSION", "3.4.4")
+sparkVersion := sys.env.getOrElse("SPARK_VERSION", "3.5.4")
 
 // determine our java version
 val jvmVersionString = settingKey[String]("The JVM version")
@@ -60,7 +60,7 @@ Test / scalacOptions ++= Seq("-encoding", "UTF-8", "-release", jvmVersion.value)
 libraryDependencies ++= Seq(
   "org.apache.datasketches" % "datasketches-java" % dsJavaVersion.value % "compile",
   "org.scala-lang" % "scala-library" % "2.12.6",
-  "org.apache.spark" %% "spark-sql" % "3.5.4" % "provided",
+  "org.apache.spark" %% "spark-sql" % sparkVersion.value % "provided",
   "org.scalatest" %% "scalatest" % "3.2.19" % "test",
   "org.scalatestplus" %% "junit-4-13" % "3.2.19.0" % "test"
 )

@@ -42,18 +42,18 @@ import org.apache.spark.sql.catalyst.analysis.TypeCheckResult
   """
   //group = "misc_funcs",
 )
-case class KllGetMin(sketchExpr: Expression)
+case class KllDoublesSketchGetMin(sketchExpr: Expression)
  extends UnaryExpression
  with ExpectsInputTypes
  with NullIntolerant {
 
   override def child: Expression = sketchExpr
 
-  override protected def withNewChildInternal(newChild: Expression): KllGetMin = {
+  override protected def withNewChildInternal(newChild: Expression): KllDoublesSketchGetMin = {
     copy(sketchExpr = newChild)
   }
 
-  override def prettyName: String = "kll_get_min"
+  override def prettyName: String = "kll_sketch_double_get_min"
 
   override def inputTypes: Seq[AbstractDataType] = Seq(KllDoublesSketchType)
 
@@ -94,18 +94,18 @@ case class KllGetMin(sketchExpr: Expression)
   """
   //group = "misc_funcs",
 )
-case class KllGetMax(sketchExpr: Expression)
+case class KllDoublesSketchGetMax(sketchExpr: Expression)
  extends UnaryExpression
  with ExpectsInputTypes
  with NullIntolerant {
 
   override def child: Expression = sketchExpr
 
-  override protected def withNewChildInternal(newChild: Expression): KllGetMax = {
+  override protected def withNewChildInternal(newChild: Expression): KllDoublesSketchGetMax = {
     copy(sketchExpr = newChild)
   }
 
-  override def prettyName: String = "kll_get_max"
+  override def prettyName: String = "kll_sketch_double_get_max"
 
   override def inputTypes: Seq[AbstractDataType] = Seq(KllDoublesSketchType)
 
@@ -147,9 +147,9 @@ case class KllGetMax(sketchExpr: Expression)
        [0.3333333333333333, 0.6666666666666666, 0.0]
   """
 )
-case class KllGetPmf(sketchExpr: Expression,
-                     splitPointsExpr: Expression,
-                     isInclusiveExpr: Expression)
+case class KllDoublesSketchGetPmf(sketchExpr: Expression,
+                                  splitPointsExpr: Expression,
+                                  isInclusiveExpr: Expression)
     extends RuntimeReplaceable
     with ImplicitCastInputTypes
     with TernaryLike[Expression] {
@@ -162,7 +162,7 @@ case class KllGetPmf(sketchExpr: Expression,
     override def second: Expression = splitPointsExpr
     override def third: Expression = isInclusiveExpr
 
-    override lazy val replacement: Expression = KllGetPmfCdf(sketchExpr, splitPointsExpr, isInclusiveExpr, true)
+    override lazy val replacement: Expression = KllDoublesSketchGetPmfCdf(sketchExpr, splitPointsExpr, isInclusiveExpr, true)
     override def inputTypes: Seq[AbstractDataType] = Seq(KllDoublesSketchType, ArrayType(DoubleType), BooleanType)
     override protected def withNewChildrenInternal(newFirst: Expression, newSecond: Expression, newThird: Expression): Expression = {
         copy(sketchExpr = newFirst, splitPointsExpr = newSecond, isInclusiveExpr = newThird)
@@ -181,9 +181,9 @@ case class KllGetPmf(sketchExpr: Expression,
        [0.3333333333333333, 0.6666666666666666, 0.0]
   """
 )
-case class KllGetCdf(sketchExpr: Expression,
-                     splitPointsExpr: Expression,
-                     isInclusiveExpr: Expression)
+case class KllDoublesSketchGetCdf(sketchExpr: Expression,
+                                  splitPointsExpr: Expression,
+                                  isInclusiveExpr: Expression)
     extends RuntimeReplaceable
     with ImplicitCastInputTypes
     with TernaryLike[Expression] {
@@ -196,7 +196,7 @@ case class KllGetCdf(sketchExpr: Expression,
     override def second: Expression = splitPointsExpr
     override def third: Expression = isInclusiveExpr
 
-    override lazy val replacement: Expression = KllGetPmfCdf(sketchExpr, splitPointsExpr, isInclusiveExpr, false)
+    override lazy val replacement: Expression = KllDoublesSketchGetPmfCdf(sketchExpr, splitPointsExpr, isInclusiveExpr, false)
     override def inputTypes: Seq[AbstractDataType] = Seq(KllDoublesSketchType, ArrayType(DoubleType), BooleanType)
     override protected def withNewChildrenInternal(newFirst: Expression, newSecond: Expression, newThird: Expression): Expression = {
         copy(sketchExpr = newFirst, splitPointsExpr = newSecond, isInclusiveExpr = newThird)
@@ -224,10 +224,10 @@ case class KllGetCdf(sketchExpr: Expression,
        [0.3333333333333333, 0.6666666666666666, 0.0]
   """
 )
-case class KllGetPmfCdf(sketchExpr: Expression,
-                        splitPointsExpr: Expression,
-                        isInclusiveExpr: Expression,
-                        isPmf: Boolean = false)
+case class KllDoublesSketchGetPmfCdf(sketchExpr: Expression,
+                                     splitPointsExpr: Expression,
+                                     isInclusiveExpr: Expression,
+                                     isPmf: Boolean = false)
  extends TernaryExpression
  with ExpectsInputTypes
  with NullIntolerant
@@ -245,7 +245,7 @@ case class KllGetPmfCdf(sketchExpr: Expression,
     copy(sketchExpr = newFirst, splitPointsExpr = newSecond, isInclusiveExpr = newThird, isPmf = isPmf)
   }
 
-  override def prettyName: String = "kll_get_pmf_cdf"
+  override def prettyName: String = "kll_sketch_double_get_pmf_cdf"
 
   override def inputTypes: Seq[AbstractDataType] = Seq(KllDoublesSketchType, ArrayType(DoubleType), BooleanType)
 

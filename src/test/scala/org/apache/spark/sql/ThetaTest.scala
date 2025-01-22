@@ -27,7 +27,7 @@ class ThetaTest extends SparkSessionManager {
     val n = 100
     val data = (for (i <- 1 to n) yield i).toDF("value")
 
-    val sketchDf = data.agg(theta_sketch_build("value").as("sketch"))
+    val sketchDf = data.agg(theta_sketch_agg_build("value").as("sketch"))
     val result: Row = sketchDf.select(theta_sketch_get_estimate("sketch").as("estimate")).head
 
     assert(result.getAs[Double]("estimate") == 100.0)
@@ -42,7 +42,7 @@ class ThetaTest extends SparkSessionManager {
 
     val df = spark.sql(s"""
       SELECT
-        theta_sketch_get_estimate(theta_sketch_build(value)) AS estimate
+        theta_sketch_get_estimate(theta_sketch_agg_build(value)) AS estimate
       FROM
         theta_input_table
     """)
@@ -58,7 +58,7 @@ class ThetaTest extends SparkSessionManager {
 
     val df = spark.sql(s"""
       SELECT
-        theta_sketch_get_estimate(theta_sketch_build(value, 14)) AS estimate
+        theta_sketch_get_estimate(theta_sketch_agg_build(value, 14)) AS estimate
       FROM
         theta_input_table
     """)
@@ -70,8 +70,8 @@ class ThetaTest extends SparkSessionManager {
     val numDistinct = 2000
     val data = (for (i <- 1 to numDistinct) yield (i % numGroups, i)).toDF("group", "value")
 
-    val groupedDf = data.groupBy("group").agg(theta_sketch_build("value").as("sketch"))
-    val mergedDf = groupedDf.agg(theta_union("sketch").as("merged"))
+    val groupedDf = data.groupBy("group").agg(theta_sketch_agg_build("value").as("sketch"))
+    val mergedDf = groupedDf.agg(theta_sketch_agg_union("sketch").as("merged"))
     val result: Row = mergedDf.select(theta_sketch_get_estimate("merged").as("estimate")).head
     assert(result.getAs[Double]("estimate") == numDistinct)
   }
@@ -86,7 +86,7 @@ class ThetaTest extends SparkSessionManager {
     val groupedDf = spark.sql(s"""
       SELECT
         group,
-        theta_sketch_build(value) AS sketch
+        theta_sketch_agg_build(value) AS sketch
       FROM
         theta_input_table
       GROUP BY
@@ -96,7 +96,7 @@ class ThetaTest extends SparkSessionManager {
 
     val mergedDf = spark.sql(s"""
       SELECT
-        theta_sketch_get_estimate(theta_union(sketch)) AS estimate
+        theta_sketch_get_estimate(theta_sketch_agg_union(sketch)) AS estimate
       FROM
         theta_sketch_table
     """)
@@ -112,7 +112,7 @@ class ThetaTest extends SparkSessionManager {
     val groupedDf = spark.sql(s"""
       SELECT
         group,
-        theta_sketch_build(value, 14) AS sketch
+        theta_sketch_agg_build(value, 14) AS sketch
       FROM
         theta_input_table
       GROUP BY
@@ -122,7 +122,7 @@ class ThetaTest extends SparkSessionManager {
 
     val mergedDf = spark.sql(s"""
       SELECT
-        theta_sketch_get_estimate(theta_union(sketch, 14)) AS estimate
+        theta_sketch_get_estimate(theta_sketch_agg_union(sketch, 14)) AS estimate
       FROM
         theta_sketch_table
     """)

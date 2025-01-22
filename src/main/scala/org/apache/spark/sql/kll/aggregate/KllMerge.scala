@@ -48,7 +48,7 @@ import org.apache.spark.sql.catalyst.analysis.TypeCheckResult
   //group = "agg_funcs",
 )
 // scalastyle:on line.size.limit
-case class KllDoublesSketchMergeAgg(
+case class KllDoublesSketchAggMerge(
     sketchExpr: Expression,
     kExpr: Expression,
     mutableAggBufferOffset: Int = 0,
@@ -86,13 +86,13 @@ case class KllDoublesSketchMergeAgg(
   }
 
   // Copy constructors
-  override def withNewMutableAggBufferOffset(newMutableAggBufferOffset: Int): KllDoublesSketchMergeAgg =
+  override def withNewMutableAggBufferOffset(newMutableAggBufferOffset: Int): KllDoublesSketchAggMerge =
     copy(mutableAggBufferOffset = newMutableAggBufferOffset)
 
-  override def withNewInputAggBufferOffset(newInputAggBufferOffset: Int): KllDoublesSketchMergeAgg =
+  override def withNewInputAggBufferOffset(newInputAggBufferOffset: Int): KllDoublesSketchAggMerge =
     copy(inputAggBufferOffset = newInputAggBufferOffset)
 
-  override protected def withNewChildrenInternal(newLeft: Expression, newRight: Expression): KllDoublesSketchMergeAgg =
+  override protected def withNewChildrenInternal(newLeft: Expression, newRight: Expression): KllDoublesSketchAggMerge =
     copy(sketchExpr = newLeft, kExpr = newRight)
 
   // overrides for TypedImperativeAggregate

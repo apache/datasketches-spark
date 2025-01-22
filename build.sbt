@@ -24,28 +24,58 @@ description := "The Apache DataSketches package for Spark"
 
 licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0"))
 
+// determine our java version
+val jvmVersionString = settingKey[String]("The JVM version")
+jvmVersionString := sys.props("java.version")
+
+val jvmVersion = settingKey[String]("The JVM major version")
+jvmVersion := {
+  val version = jvmVersionString.value
+  if (version.startsWith("21")) "21"
+  else if (version.startsWith("17")) "17"
+  else if (version.startsWith("11")) "11"
+  else "8"
+}
+
+val dsJavaVersion = settingKey[String]("The DataSketches Java version")
+dsJavaVersion := {
+  if (jvmVersion.value == "11") "6.2.0"
+  else if (jvmVersion.value == "17") "7.0.1"
+  else if (jvmVersion.value == "21") "8.0.0"
+  else "6.2.0"
+}
+
 // these do not impact code generation in spark
-javacOptions ++= Seq("-source", "17", "-target", "17")
-scalacOptions ++= Seq("-encoding", "UTF-8", "-release", "17")
-Test / javacOptions ++= Seq("-source", "17", "-target", "17")
-Test / scalacOptions ++= Seq("-encoding", "UTF-8", "-release", "17")
+javacOptions ++= Seq("-source", jvmVersion.value, "-target", jvmVersion.value)
+scalacOptions ++= Seq("-encoding", "UTF-8", "-release", jvmVersion.value)
+Test / javacOptions ++= Seq("-source", jvmVersion.value, "-target", jvmVersion.value)
+Test / scalacOptions ++= Seq("-encoding", "UTF-8", "-release", jvmVersion.value)
 
 libraryDependencies ++= Seq(
+  "org.apache.datasketches" % "datasketches-java" % dsJavaVersion.value % "compile",
   "org.scala-lang" % "scala-library" % "2.12.6",
   "org.apache.spark" %% "spark-sql" % "3.5.4" % "provided",
-  "org.apache.datasketches" % "datasketches-java" % "7.0.0" % "compile",
   "org.scalatest" %% "scalatest" % "3.2.19" % "test",
   "org.scalatestplus" %% "junit-4-13" % "3.2.19.0" % "test"
 )
 
 Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-oD")
 
-// for java 17
-Test / fork := true
-Test / javaOptions ++= Seq(
-  "--add-modules=jdk.incubator.foreign",
-  "--add-exports=java.base/sun.nio.ch=ALL-UNNAMED"
-)
+// additional options for java 17
+Test / fork := {
+  if (jvmVersion.value == "17") true
+  else (Test / fork).value
+}
+
+Test / javaOptions ++= {
+  if (jvmVersion.value == "17") {
+    Seq("--add-modules=jdk.incubator.foreign",
+        "--add-exports=java.base/sun.nio.ch=ALL-UNNAMED"
+    )
+  } else {
+    Seq.empty
+  }
+}
 
 scalacOptions ++= Seq(
   "-deprecation",

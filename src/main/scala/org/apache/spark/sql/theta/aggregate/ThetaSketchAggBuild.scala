@@ -17,37 +17,36 @@
 
 package org.apache.spark.sql.aggregate
 
-import org.apache.datasketches.memory.Memory
-import org.apache.datasketches.theta.{Sketch, SetOperation}
-
+import org.apache.datasketches.theta.{UpdateSketch, SetOperation}
+import org.apache.spark.SparkUnsupportedOperationException
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.{ExpectsInputTypes, Expression, ExpressionDescription, Literal}
 import org.apache.spark.sql.catalyst.expressions.aggregate.TypedImperativeAggregate
 import org.apache.spark.sql.catalyst.trees.BinaryLike
-import org.apache.spark.sql.types.{AbstractDataType, DataType, IntegerType, ThetaSketchWrapper, ThetaSketchType}
-import org.apache.spark.SparkUnsupportedOperationException
+import org.apache.spark.sql.types.{AbstractDataType, DataType, IntegerType, LongType, NumericType, FloatType, DoubleType, ThetaSketchWrapper, ThetaSketchType}
 
 /**
- * Theta Union operation.
+ * The ThetaSketchBuild function creates a Theta sketch from a column of values
+ * which can be used to estimate distinct count.
  *
  * See [[https://datasketches.apache.org/docs/Theta/ThetaSketches.html]] for more information.
  *
- * @param child child expression, on which to perform the union operation
+ * @param child child expression, from which to build a sketch
  * @param lgk the size-accraucy trade-off parameter for the sketch
  */
 // scalastyle:off line.size.limit
 @ExpressionDescription(
   usage = """
-    _FUNC_(expr, lgk) - Performs Theta Union operation and returns the result as Theta Sketch in binary form
-  """,
+    _FUNC_(expr, lgk) - Creates a Theta Sketch and returns the binary representation.
+      `lgk` (optional, default: 12) the size-accuracy trade-off parameter.""",
   examples = """
     Example:
-      > SELECT theta_sketch_get_estimate(_FUNC_(sketch)) FROM (SELECT theta_sketch_build(col) as sketch FROM VALUES (1), (2), (3) tab(col) UNION ALL SELECT theta_sketch_build(col) as sketch FROM VALUES (3), (4), (5) tab(col));
+      > SELECT theta_sketch_get_estimate(_FUNC_(col, 12)) FROM VALUES (1), (2), (3), (4), (5) tab(col);
        5.0
-  """
+  """,
 )
 // scalastyle:on line.size.limit
-case class ThetaUnion(
+case class ThetaSketchAggBuild(
     left: Expression,
     right: Expression,
     mutableAggBufferOffset: Int = 0,
@@ -66,37 +65,38 @@ case class ThetaUnion(
     }
   }
 
-  def this(left: Expression, right: Expression) = this(left, right, 0, 0)
-  def this(left: Expression) = this(left, Literal(12), 0, 0)
-//  def this(child: Expression, lgk: Expression) = this(child, lgk, 0, 0)
-//  def this(child: Expression, lgk: Int) = this(child, Literal(lgk), 0, 0)
+  def this(child: Expression) = this(child, Literal(12), 0, 0)
+  def this(child: Expression, lgk: Expression) = this(child, lgk, 0, 0)
+  def this(child: Expression, lgk: Int) = this(child, Literal(lgk), 0, 0)
 
-  override def withNewMutableAggBufferOffset(newMutableAggBufferOffset: Int): ThetaUnion =
+  override def withNewMutableAggBufferOffset(newMutableAggBufferOffset: Int): ThetaSketchAggBuild =
     copy(mutableAggBufferOffset = newMutableAggBufferOffset)
 
-  override def withNewInputAggBufferOffset(newInputAggBufferOffset: Int): ThetaUnion =
+  override def withNewInputAggBufferOffset(newInputAggBufferOffset: Int): ThetaSketchAggBuild =
     copy(inputAggBufferOffset = newInputAggBufferOffset)
 
-  override protected def withNewChildrenInternal(newLeft: Expression, newRight: Expression): ThetaUnion = {
+  override protected def withNewChildrenInternal(newLeft: Expression, newRight: Expression): ThetaSketchAggBuild = {
     copy(left = newLeft, right = newRight)
   }
 
-  // overrides for TypedImperativeAggregate
-  override def prettyName: String = "theta_union"
+  override def prettyName: String = "theta_sketch_build"
+
   override def dataType: DataType = ThetaSketchType
+
   override def nullable: Boolean = false
 
-  // TODO: refine this?
-  override def inputTypes: Seq[AbstractDataType] = Seq(ThetaSketchType, IntegerType)
+  override def inputTypes: Seq[AbstractDataType] = Seq(NumericType, IntegerType, LongType, FloatType, DoubleType)
 
-  override def createAggregationBuffer(): ThetaSketchWrapper = new ThetaSketchWrapper(union = Some(SetOperation.builder().setLogNominalEntries(lgk).buildUnion))
+  override def createAggregationBuffer(): ThetaSketchWrapper = new ThetaSketchWrapper(updateSketch = Some(UpdateSketch.builder().setLogNominalEntries(lgk).build()))
 
   override def update(wrapper: ThetaSketchWrapper, input: InternalRow): ThetaSketchWrapper = {
-    val bytes = left.eval(input)
-    if (bytes != null) {
+    val value = left.eval(input)
+    if (value != null) {
       left.dataType match {
-        case ThetaSketchType =>
-          wrapper.union.get.union(Sketch.wrap(Memory.wrap(bytes.asInstanceOf[Array[Byte]])))
+        case DoubleType => wrapper.updateSketch.get.update(value.asInstanceOf[Double])
+        case FloatType => wrapper.updateSketch.get.update(value.asInstanceOf[Float])
+        case IntegerType => wrapper.updateSketch.get.update(value.asInstanceOf[Int])
+        case LongType => wrapper.updateSketch.get.update(value.asInstanceOf[Long])
         case _ => throw new SparkUnsupportedOperationException(
           s"Unsupported input type ${left.dataType.catalogString}",
           Map("dataType" -> dataType.toString))
@@ -120,7 +120,11 @@ case class ThetaUnion(
   }
 
   override def eval(wrapper: ThetaSketchWrapper): Any = {
-    wrapper.union.get.getResult.toByteArrayCompressed
+    if (wrapper == null || wrapper.union.isEmpty) {
+      null
+    } else {
+      wrapper.union.get.getResult.toByteArrayCompressed
+    }
   }
 
   override def serialize(wrapper: ThetaSketchWrapper): Array[Byte] = {

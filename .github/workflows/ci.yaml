@@ -38,8 +38,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.m2/repository
-          key: build-${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: build-${{ runner.os }}-maven-
+          key: build-${{ runner.os }}-jdk-${{ matrix.jdk }}-spark-${{ matrix.spark }}-${{ hashFiles('**/pom.xml') }}
+          restore-keys: build-${{ runner.os }}-jdk-${{matrix.jdk}}-spark-${{ matrix.spark }}-maven-
 
       - name: Setup JDK
         uses: actions/setup-java@v4

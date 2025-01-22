@@ -20,13 +20,13 @@ package org.apache.spark.sql.registrar
 import org.apache.spark.sql.catalyst.analysis.FunctionRegistry.FunctionBuilder
 import org.apache.spark.sql.catalyst.expressions.{ExpressionInfo}
 
-import org.apache.spark.sql.aggregate.{ThetaSketchBuild, ThetaUnion}
+import org.apache.spark.sql.aggregate.{ThetaSketchAggBuild, ThetaSketchAggUnion}
 import org.apache.spark.sql.expressions.ThetaSketchGetEstimate
 
 object ThetaFunctionRegistry extends DatasketchesFunctionRegistry {
   override val expressions: Map[String, (ExpressionInfo, FunctionBuilder)] = Map(
-    expression[ThetaSketchBuild]("theta_sketch_build"),
-    expression[ThetaUnion]("theta_union"),
+    expression[ThetaSketchAggBuild]("theta_sketch_agg_build"),
+    expression[ThetaSketchAggUnion]("theta_sketch_agg_union"),
     expression[ThetaSketchGetEstimate]("theta_sketch_get_estimate")
   )
 }

@@ -46,7 +46,7 @@ import org.apache.spark.sql.catalyst.analysis.TypeCheckResult
   """,
 )
 // scalastyle:on line.size.limit
-case class KllDoublesSketchAgg(
+case class KllDoublesSketchAggBuild(
     dataExpr: Expression,
     kExpr: Expression,
     mutableAggBufferOffset: Int = 0,
@@ -84,14 +84,14 @@ case class KllDoublesSketchAgg(
   }
 
   // Copy constructors
-  override def withNewMutableAggBufferOffset(newMutableAggBufferOffset: Int): KllDoublesSketchAgg =
+  override def withNewMutableAggBufferOffset(newMutableAggBufferOffset: Int): KllDoublesSketchAggBuild =
     copy(mutableAggBufferOffset = newMutableAggBufferOffset)
 
-  override def withNewInputAggBufferOffset(newInputAggBufferOffset: Int): KllDoublesSketchAgg =
+  override def withNewInputAggBufferOffset(newInputAggBufferOffset: Int): KllDoublesSketchAggBuild =
     copy(inputAggBufferOffset = newInputAggBufferOffset)
 
   override protected def withNewChildrenInternal(newLeft: Expression,
-                                                 newRight: Expression): KllDoublesSketchAgg = {
+                                                 newRight: Expression): KllDoublesSketchAggBuild = {
     copy(dataExpr = newLeft, kExpr = newRight)
   }
 

@@ -21,14 +21,14 @@ import org.apache.spark.sql.catalyst.expressions.Literal
 import org.apache.spark.sql.functions.lit
 import org.apache.spark.sql.types.{ArrayType, BooleanType, DoubleType}
 
-import org.apache.spark.sql.aggregate.{KllDoublesSketchMergeAgg, KllDoublesSketchAgg}
+import org.apache.spark.sql.aggregate.{KllDoublesSketchAggMerge, KllDoublesSketchAggBuild}
 import org.apache.spark.sql.expressions.{KllDoublesSketchGetMin, KllDoublesSketchGetMax, KllDoublesSketchGetPmfCdf}
 
 object functions_datasketches_kll extends DatasketchesScalaFunctionBase {
 
   // build sketch
   def kll_sketch_double_agg_build(expr: Column, k: Column): Column = withAggregateFunction {
-    new KllDoublesSketchAgg(expr.expr, k.expr)
+    new KllDoublesSketchAggBuild(expr.expr, k.expr)
   }
 
   def kll_sketch_double_agg_build(expr: Column, k: Int): Column = {
@@ -40,7 +40,7 @@ object functions_datasketches_kll extends DatasketchesScalaFunctionBase {
   }
 
   def kll_sketch_double_agg_build(expr: Column): Column = withAggregateFunction {
-    new KllDoublesSketchAgg(expr.expr)
+    new KllDoublesSketchAggBuild(expr.expr)
   }
 
   def kll_sketch_double_agg_build(columnName: String): Column = {
@@ -49,7 +49,7 @@ object functions_datasketches_kll extends DatasketchesScalaFunctionBase {
 
   // merge sketches
   def kll_sketch_double_agg_merge(expr: Column): Column = withAggregateFunction {
-    new KllDoublesSketchMergeAgg(expr.expr)
+    new KllDoublesSketchAggMerge(expr.expr)
   }
 
   def kll_sketch_double_agg_merge(columnName: String): Column = {
@@ -57,11 +57,11 @@ object functions_datasketches_kll extends DatasketchesScalaFunctionBase {
   }
 
   def kll_sketch_double_agg_merge(expr: Column, k: Column): Column = withAggregateFunction {
-    new KllDoublesSketchMergeAgg(expr.expr, k.expr)
+    new KllDoublesSketchAggMerge(expr.expr, k.expr)
   }
 
   def kll_sketch_double_agg_merge(expr: Column, k: Int): Column = withAggregateFunction {
-    new KllDoublesSketchMergeAgg(expr.expr, lit(k).expr)
+    new KllDoublesSketchAggMerge(expr.expr, lit(k).expr)
   }
 
   def kll_sketch_double_agg_merge(columnName: String, k: Int): Column = {

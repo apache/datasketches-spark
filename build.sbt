@@ -24,28 +24,34 @@ description := "The Apache DataSketches package for Spark"
 
 licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0"))
 
+val sparkVersion = settingKey[String]("The version of Spark")
+sparkVersion := sys.env.getOrElse("SPARK_VERSION", "3.4.4")
+
 // determine our java version
 val jvmVersionString = settingKey[String]("The JVM version")
 jvmVersionString := sys.props("java.version")
 
+// Map of JVM version prefix to:
+// (JVM major version, datasketches-java version)
+val jvmVersionMap = Map(
+  "21" -> ("21", "8.0.0"),
+  "17" -> ("17", "7.0.1"),
+  "11" -> ("11", "6.2.0"),
+  "8"  -> ("8",  "6.2.0"),
+  "1.8" -> ("8", "6.2.0")
+)
+
+// determine the JVM major verison (default: 11)
 val jvmVersion = settingKey[String]("The JVM major version")
-jvmVersion := {
-  val version = jvmVersionString.value
-  if (version.startsWith("21")) "21"
-  else if (version.startsWith("17")) "17"
-  else if (version.startsWith("11")) "11"
-  else "8"
-}
+jvmVersion := jvmVersionMap.collectFirst {
+  case (prefix, (major, _)) if jvmVersionString.value.startsWith(prefix) => major
+}.getOrElse("11")
 
+// look up the associated datasketches-java version
 val dsJavaVersion = settingKey[String]("The DataSketches Java version")
-dsJavaVersion := {
-  if (jvmVersion.value == "11") "6.2.0"
-  else if (jvmVersion.value == "17") "7.0.1"
-  else if (jvmVersion.value == "21") "8.0.0"
-  else "6.2.0"
-}
+dsJavaVersion := jvmVersionMap.get(jvmVersion.value).map(_._2).get
 
-// these do not impact code generation in spark
+
 javacOptions ++= Seq("-source", jvmVersion.value, "-target", jvmVersion.value)
 scalacOptions ++= Seq("-encoding", "UTF-8", "-release", jvmVersion.value)
 Test / javacOptions ++= Seq("-source", jvmVersion.value, "-target", jvmVersion.value)

@@ -28,7 +28,6 @@ description := "The Apache DataSketches package for Spark"
 
 licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0"))
 
-val scalaVersion = settingKey[String]("The version of Scala")
 scalaVersion := sys.env.getOrElse("SCALA_VERSION", DEFAULT_SCALA_VERSION)
 
 val sparkVersion = settingKey[String]("The version of Spark")

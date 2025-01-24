@@ -1,3 +1,4 @@
+import scala.xml.dtd.DEFAULT
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -17,15 +18,21 @@
 
 name := "datasketches-spark"
 version := "1.0-SNAPSHOT"
-scalaVersion := "2.12.20"
+
+DEFAULT_SCALA_VERSION := "2.12.20"
+DEFAULT_SPARK_VERSION := "3.5.4"
+DEFAULT_JDK_VERSION := "11"
 
 organization := "org.apache.datasketches"
 description := "The Apache DataSketches package for Spark"
 
 licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0"))
 
+val scalaVersion = settingKey[String]("The version of Scala")
+scalaVersion := sys.env.getOrElse("SCALA_VERSION", DEFAULT_SCALA_VERSION)
+
 val sparkVersion = settingKey[String]("The version of Spark")
-sparkVersion := sys.env.getOrElse("SPARK_VERSION", "3.5.4")
+sparkVersion := sys.env.getOrElse("SPARK_VERSION", DEFAULT_SPARK_VERSION)
 
 // determine our java version
 val jvmVersionString = settingKey[String]("The JVM version")
@@ -45,7 +52,7 @@ val jvmVersionMap = Map(
 val jvmVersion = settingKey[String]("The JVM major version")
 jvmVersion := jvmVersionMap.collectFirst {
   case (prefix, (major, _)) if jvmVersionString.value.startsWith(prefix) => major
-}.getOrElse("11")
+}.getOrElse(DEFAULT_JDK_VERSION)
 
 // look up the associated datasketches-java version
 val dsJavaVersion = settingKey[String]("The DataSketches Java version")
@@ -59,8 +66,8 @@ Test / scalacOptions ++= Seq("-encoding", "UTF-8", "-release", jvmVersion.value)
 
 libraryDependencies ++= Seq(
   "org.apache.datasketches" % "datasketches-java" % dsJavaVersion.value % "compile",
-  "org.scala-lang" % "scala-library" % "2.12.6",
-  "org.apache.spark" %% "spark-sql" % sparkVersion.value % "provided",
+  "org.scala-lang" % "scala-library" % scalaVersion.value, // scala3-library may need to use %%
+  ("org.apache.spark" %% "spark-sql" % sparkVersion.value % "provided").cross(CrossVersion.for3Use2_13),
   "org.scalatest" %% "scalatest" % "3.2.19" % "test",
   "org.scalatestplus" %% "junit-4-13" % "3.2.19.0" % "test"
 )

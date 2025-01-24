@@ -19,7 +19,6 @@ package org.apache.spark.sql
 
 import scala.util.Random
 import org.apache.spark.sql.functions._
-import scala.collection.mutable.WrappedArray
 import org.apache.spark.sql.types.{StructType, StructField, IntegerType, BinaryType}
 
 import org.apache.spark.sql.functions_datasketches_kll._
@@ -31,7 +30,7 @@ class KllTest extends SparkSessionManager {
   import spark.implicits._
 
   // helper method to check if two arrays are equal
-  private def compareArrays(ref: Array[Double], tst: WrappedArray[Double]) {
+  private def compareArrays(ref: Array[Double], tst: Array[Double]): Unit = {
     val tstArr = tst.toArray
     if (ref.length != tstArr.length)
       throw new AssertionError("Array lengths do not match: " + ref.length + " != " + tstArr.length)
@@ -48,7 +47,7 @@ class KllTest extends SparkSessionManager {
     // produce a List[Row] of (id, sk)
     for (i <- 1 to numClass) yield {
       val sk = KllDoublesSketch.newHeapInstance(200)
-      for (j <- 0 until numSamples) sk.update(Random.nextDouble)
+      for (j <- 0 until numSamples) sk.update(Random.nextDouble())
       dataList.add(Row(i, sk))
     }
 
@@ -68,7 +67,7 @@ class KllTest extends SparkSessionManager {
     // produce a Seq(Array(id, sk))
     val data = for (i <- 1 to numClass) yield {
       val sk = KllDoublesSketch.newHeapInstance(200)
-      for (j <- 0 until numSamples) sk.update(Random.nextDouble)
+      for (j <- 0 until numSamples) sk.update(Random.nextDouble())
       Row(i, sk.toByteArray)
     }
 
@@ -90,7 +89,7 @@ class KllTest extends SparkSessionManager {
     val sketchDf = data.agg(kll_sketch_double_agg_build("value").as("sketch"))
     val result: Row = sketchDf.select(kll_sketch_double_get_min($"sketch").as("min"),
                                       kll_sketch_double_get_max($"sketch").as("max")
-                                      ).head
+                                      ).head()
 
     val minValue = result.getAs[Double]("min")
     val maxValue = result.getAs[Double]("max")
@@ -103,19 +102,19 @@ class KllTest extends SparkSessionManager {
       kll_sketch_double_get_pmf($"sketch", splitPoints, false).as("pmf_exclusive"),
       kll_sketch_double_get_cdf($"sketch", splitPoints).as("cdf_inclusive"),
       kll_sketch_double_get_cdf($"sketch", splitPoints, false).as("cdf_exclusive")
-    ).head
+    ).head()
 
     val pmf_incl = Array[Double](0.2, 0.3, 0.5, 0.0)
-    compareArrays(pmf_incl, pmfCdfResult.getAs[WrappedArray[Double]]("pmf_inclusive"))
+    compareArrays(pmf_incl, pmfCdfResult.getAs[Seq[Double]]("pmf_inclusive").toArray)
 
     val pmf_excl = Array[Double](0.2, 0.29, 0.51, 0.0)
-    compareArrays(pmf_excl, pmfCdfResult.getAs[WrappedArray[Double]]("pmf_exclusive"))
+    compareArrays(pmf_excl, pmfCdfResult.getAs[Seq[Double]]("pmf_exclusive").toArray)
 
     val cdf_incl = Array[Double](0.2, 0.5, 1.0, 1.0)
-    compareArrays(cdf_incl, pmfCdfResult.getAs[WrappedArray[Double]]("cdf_inclusive"))
+    compareArrays(cdf_incl, pmfCdfResult.getAs[Seq[Double]]("cdf_inclusive").toArray)
 
     val cdf_excl = Array[Double](0.2, 0.49, 1.0, 1.0)
-    compareArrays(cdf_excl, pmfCdfResult.getAs[WrappedArray[Double]]("cdf_exclusive"))
+    compareArrays(cdf_excl, pmfCdfResult.getAs[Seq[Double]]("cdf_exclusive").toArray)
   }
 
   test("Kll Doubles Sketch via SQL") {
@@ -135,8 +134,8 @@ class KllTest extends SparkSessionManager {
       |  data_table
     """.stripMargin
     )
-    val minValue = kllDf.head.getAs[Double]("min")
-    val maxValue = kllDf.head.getAs[Double]("max")
+    val minValue = kllDf.head().getAs[Double]("min")
+    val maxValue = kllDf.head().getAs[Double]("max")
     assert(minValue == 1.0)
     assert(maxValue == n.toDouble)
 
@@ -154,26 +153,26 @@ class KllTest extends SparkSessionManager {
       |   FROM
       |     data_table) t
       """.stripMargin
-    ).head
+    ).head()
 
     val pmf_incl = Array[Double](0.2, 0.3, 0.5, 0.0)
-    compareArrays(pmf_incl, pmfCdfResult.getAs[WrappedArray[Double]]("pmf_inclusive"))
+    compareArrays(pmf_incl, pmfCdfResult.getAs[Seq[Double]]("pmf_inclusive").toArray)
 
     val pmf_excl = Array[Double](0.2, 0.29, 0.51, 0.0)
-    compareArrays(pmf_excl, pmfCdfResult.getAs[WrappedArray[Double]]("pmf_exclusive"))
+    compareArrays(pmf_excl, pmfCdfResult.getAs[Seq[Double]]("pmf_exclusive").toArray)
 
     val cdf_incl = Array[Double](0.2, 0.5, 1.0, 1.0)
-    compareArrays(cdf_incl, pmfCdfResult.getAs[WrappedArray[Double]]("cdf_inclusive"))
+    compareArrays(cdf_incl, pmfCdfResult.getAs[Seq[Double]]("cdf_inclusive").toArray)
 
     val cdf_excl = Array[Double](0.2, 0.49, 1.0, 1.0)
-    compareArrays(cdf_excl, pmfCdfResult.getAs[WrappedArray[Double]]("cdf_exclusive"))
+    compareArrays(cdf_excl, pmfCdfResult.getAs[Seq[Double]]("cdf_exclusive").toArray)
   }
 
   test("KLL Doubles Merge via Scala") {
     val data = generateData().toDF("id", "value")
 
     // compute global min and max
-    val minMax: Row = data.agg(min("value").as("min"), max("value").as("max")).collect.head
+    val minMax: Row = data.agg(min("value").as("min"), max("value").as("max")).collect().head
     val globalMin = minMax.getAs[Double]("min")
     val globalMax = minMax.getAs[Double]("max")
 
@@ -187,7 +186,7 @@ class KllTest extends SparkSessionManager {
     // check min and max
     var result: Row = mergedSketchDf.select(kll_sketch_double_get_min($"sketch").as("min"),
                                             kll_sketch_double_get_max($"sketch").as("max"))
-                                    .head
+                                    .head()
 
     var sketchMin = result.getAs[Double]("min")
     var sketchMax = result.getAs[Double]("max")
@@ -202,7 +201,7 @@ class KllTest extends SparkSessionManager {
     // check min and max
     result = mergedSketchDf.select(kll_sketch_double_get_min($"sketch").as("min"),
                                    kll_sketch_double_get_max($"sketch").as("max"))
-                           .head
+                           .head()
 
     sketchMin = result.getAs[Double]("min")
     sketchMax = result.getAs[Double]("max")
@@ -219,7 +218,7 @@ class KllTest extends SparkSessionManager {
     data.createOrReplaceTempView("data_table")
 
     // compute global min and max from dataframe
-    val minMax: Row = data.agg(min("value").as("min"), max("value").as("max")).head
+    val minMax: Row = data.agg(min("value").as("min"), max("value").as("max")).head()
     val globalMin = minMax.getAs[Double]("min")
     val globalMax = minMax.getAs[Double]("max")
 
@@ -255,7 +254,7 @@ class KllTest extends SparkSessionManager {
     )
 
     // check min and max
-    var result: Row = mergedSketchDf.head
+    var result: Row = mergedSketchDf.head()
     var sketchMin = result.getAs[Double]("min")
     var sketchMax = result.getAs[Double]("max")
 
@@ -279,7 +278,7 @@ class KllTest extends SparkSessionManager {
     )
 
     // check min and max
-    result = mergedSketchDf.head
+    result = mergedSketchDf.head()
     sketchMin = result.getAs[Double]("min")
     sketchMax = result.getAs[Double]("max")
 

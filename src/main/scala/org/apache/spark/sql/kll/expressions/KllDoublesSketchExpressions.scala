@@ -260,7 +260,7 @@ case class KllDoublesSketchGetPmfCdf(sketchExpr: Expression,
     if (!isInclusiveExpr.foldable) {
       return TypeCheckResult.TypeCheckFailure(s"isInclusiveExpr must be foldable, but got: ${isInclusiveExpr}")
     }
-    if (splitPointsExpr.eval().asInstanceOf[GenericArrayData].numElements == 0) {
+    if (splitPointsExpr.eval().asInstanceOf[GenericArrayData].numElements() == 0) {
       return TypeCheckResult.TypeCheckFailure(s"splitPointsExpr must not be empty")
     }
 
@@ -269,7 +269,7 @@ case class KllDoublesSketchGetPmfCdf(sketchExpr: Expression,
 
   override def nullSafeEval(sketchInput: Any, splitPointsInput: Any, isInclusiveInput: Any): Any = {
     val sketchBytes = sketchInput.asInstanceOf[Array[Byte]]
-    val splitPoints = splitPointsInput.asInstanceOf[GenericArrayData].toDoubleArray
+    val splitPoints = splitPointsInput.asInstanceOf[GenericArrayData].toDoubleArray()
     val sketch = KllDoublesSketch.wrap(Memory.wrap(sketchBytes))
 
     val result: Array[Double] =

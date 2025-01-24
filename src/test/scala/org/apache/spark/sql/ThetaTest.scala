@@ -28,7 +28,7 @@ class ThetaTest extends SparkSessionManager {
     val data = (for (i <- 1 to n) yield i).toDF("value")
 
     val sketchDf = data.agg(theta_sketch_agg_build("value").as("sketch"))
-    val result: Row = sketchDf.select(theta_sketch_get_estimate("sketch").as("estimate")).head
+    val result: Row = sketchDf.select(theta_sketch_get_estimate("sketch").as("estimate")).head()
 
     assert(result.getAs[Double]("estimate") == 100.0)
   }
@@ -46,7 +46,7 @@ class ThetaTest extends SparkSessionManager {
       FROM
         theta_input_table
     """)
-    assert(df.head.getAs[Double]("estimate") == 100.0)
+    assert(df.head().getAs[Double]("estimate") == 100.0)
   }
 
   test("Theta Sketch build via SQL with lgk") {
@@ -62,7 +62,7 @@ class ThetaTest extends SparkSessionManager {
       FROM
         theta_input_table
     """)
-    assert(df.head.getAs[Double]("estimate") == 100.0)
+    assert(df.head().getAs[Double]("estimate") == 100.0)
   }
 
   test("Theta Union via Scala") {
@@ -72,7 +72,7 @@ class ThetaTest extends SparkSessionManager {
 
     val groupedDf = data.groupBy("group").agg(theta_sketch_agg_build("value").as("sketch"))
     val mergedDf = groupedDf.agg(theta_sketch_agg_union("sketch").as("merged"))
-    val result: Row = mergedDf.select(theta_sketch_get_estimate("merged").as("estimate")).head
+    val result: Row = mergedDf.select(theta_sketch_get_estimate("merged").as("estimate")).head()
     assert(result.getAs[Double]("estimate") == numDistinct)
   }
 
@@ -100,7 +100,7 @@ class ThetaTest extends SparkSessionManager {
       FROM
         theta_sketch_table
     """)
-    assert(mergedDf.head.getAs[Double]("estimate") == numDistinct)
+    assert(mergedDf.head().getAs[Double]("estimate") == numDistinct)
   }
 
   test("Theta Union via SQL with lgk") {
@@ -126,7 +126,7 @@ class ThetaTest extends SparkSessionManager {
       FROM
         theta_sketch_table
     """)
-    assert(mergedDf.head.getAs[Double]("estimate") == numDistinct)
+    assert(mergedDf.head().getAs[Double]("estimate") == numDistinct)
   }
 
 }

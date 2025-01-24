@@ -19,9 +19,9 @@ import scala.xml.dtd.DEFAULT
 name := "datasketches-spark"
 version := "1.0-SNAPSHOT"
 
-DEFAULT_SCALA_VERSION := "2.12.20"
-DEFAULT_SPARK_VERSION := "3.5.4"
-DEFAULT_JDK_VERSION := "11"
+val DEFAULT_SCALA_VERSION = "2.12.20"
+val DEFAULT_SPARK_VERSION = "3.5.4"
+val DEFAULT_JDK_VERSION = "11"
 
 organization := "org.apache.datasketches"
 description := "The Apache DataSketches package for Spark"

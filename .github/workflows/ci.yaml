@@ -15,7 +15,7 @@ on:
 
 jobs:
   build:
-    name: Build and Test
+    name: JDK ${{ matrix.jdk }} - Scala ${{ matrix.scala }} - Spark ${{ matrix.spark }}
     runs-on: ubuntu-latest
 
     strategy:

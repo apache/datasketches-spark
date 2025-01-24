@@ -15,17 +15,19 @@ on:
 
 jobs:
   build:
-    name: Build and Test
+    name: JDK ${{ matrix.jdk }} - Scala ${{ matrix.scala }} - Spark ${{ matrix.spark }}
     runs-on: ubuntu-latest
 
     strategy:
       fail-fast: false
       matrix:
         jdk: [ 8, 11, 17 ]
+        scala: [ 2.12.20, 2.13.16 ]
         spark: [ 3.4.4, 3.5.4 ]
 
     env:
       JDK_VERSION: ${{ matrix.jdk }}
+      SCALA_VERSION: ${{ matrix.scala }}
       SPARK_VERSION: ${{ matrix.spark }}
 
     steps:
@@ -38,8 +40,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.m2/repository
-          key: build-${{ runner.os }}-jdk-${{ matrix.jdk }}-spark-${{ matrix.spark }}-${{ hashFiles('**/pom.xml') }}
-          restore-keys: build-${{ runner.os }}-jdk-${{matrix.jdk}}-spark-${{ matrix.spark }}-maven-
+          key: build-${{ runner.os }}-jdk-${{ matrix.jdk }}-scala-${{ matrix.scala }}-spark-${{ matrix.spark }}-${{ hashFiles('**/pom.xml') }}
+          restore-keys: build-${{ runner.os }}-jdk-${{matrix.jdk}}-scala-${{ matrix.scala }}-spark-${{ matrix.spark }}-maven-
 
       - name: Setup JDK
         uses: actions/setup-java@v4
@@ -53,13 +55,15 @@ jobs:
       - name: Setup SBT
         uses: sbt/setup-sbt@v1
 
-      - name: Echo Java Version
-        run: >
+      - name: Echo config versions
+        run: |
           java -version
+          echo Scala version: $SCALA_VERSION
+          echo Spark version: $SPARK_VERSION
 
       - name: Build and test
         run: >
-          sbt --batch clean test
+          sbt ++$SCALA_VEERSION --batch clean test
 
 # Architecture options: x86, x64, armv7, aarch64, ppc64le
 # setup-java@v4 has a "with cache" option

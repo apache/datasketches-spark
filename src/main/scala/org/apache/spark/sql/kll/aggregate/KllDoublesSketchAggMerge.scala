@@ -20,7 +20,6 @@ package org.apache.spark.sql.aggregate
 import org.apache.datasketches.memory.Memory
 import org.apache.datasketches.kll.{KllSketch, KllDoublesSketch}
 
-import org.apache.spark.SparkUnsupportedOperationException
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.{ExpectsInputTypes, Expression, ExpressionDescription, Literal}
 import org.apache.spark.sql.catalyst.expressions.aggregate.TypedImperativeAggregate
@@ -62,9 +61,8 @@ case class KllDoublesSketchAggMerge(
       case null => KllSketch.DEFAULT_K
       case k: Int => k
       // this shouldn't happen after checkInputDataTypes()
-      case _ => throw new SparkUnsupportedOperationException(
-        s"Unsupported input type ${right.dataType.catalogString}",
-        Map("dataType" -> dataType.toString))
+      case _ => throw new IllegalArgumentException(
+        s"Unsupported input type ${right.dataType.catalogString}")
     }
   }
 
@@ -102,8 +100,6 @@ case class KllDoublesSketchAggMerge(
 
   override def nullable: Boolean = false
 
-  override def stateful: Boolean = true
-
   override def inputTypes: Seq[AbstractDataType] = Seq(KllDoublesSketchType, IntegerType)
 
   override def checkInputDataTypes(): TypeCheckResult = {
@@ -135,9 +131,8 @@ case class KllDoublesSketchAggMerge(
         case KllDoublesSketchType =>
             union.merge(KllDoublesSketch.wrap(Memory.wrap(value.asInstanceOf[Array[Byte]])))
             union
-        case _ => throw new SparkUnsupportedOperationException(
-          s"Unsupported input type ${sketchExpr.dataType.catalogString}",
-          Map("dataType" -> dataType.toString))
+        case _ => throw new IllegalArgumentException(
+          s"Unsupported input type ${sketchExpr.dataType.catalogString}")
       }
     } else {
       union

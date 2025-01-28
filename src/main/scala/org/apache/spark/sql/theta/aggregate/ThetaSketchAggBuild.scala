@@ -18,7 +18,6 @@
 package org.apache.spark.sql.aggregate
 
 import org.apache.datasketches.theta.{UpdateSketch, SetOperation}
-import org.apache.spark.SparkUnsupportedOperationException
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.{ExpectsInputTypes, Expression, ExpressionDescription, Literal}
 import org.apache.spark.sql.catalyst.expressions.aggregate.TypedImperativeAggregate
@@ -59,9 +58,8 @@ case class ThetaSketchAggBuild(
     right.eval() match {
       case null => 12
       case lgk: Int => lgk
-      case _ => throw new SparkUnsupportedOperationException(
-        s"Unsupported input type ${right.dataType.catalogString}",
-        Map("dataType" -> dataType.toString))
+      case _ => throw new IllegalArgumentException(
+        s"Unsupported input type ${right.dataType.catalogString}")
     }
   }
 
@@ -97,9 +95,8 @@ case class ThetaSketchAggBuild(
         case FloatType => wrapper.updateSketch.get.update(value.asInstanceOf[Float])
         case IntegerType => wrapper.updateSketch.get.update(value.asInstanceOf[Int])
         case LongType => wrapper.updateSketch.get.update(value.asInstanceOf[Long])
-        case _ => throw new SparkUnsupportedOperationException(
-          s"Unsupported input type ${left.dataType.catalogString}",
-          Map("dataType" -> dataType.toString))
+        case _ => throw new IllegalArgumentException(
+          s"Unsupported input type ${left.dataType.catalogString}")
       }
     }
     wrapper

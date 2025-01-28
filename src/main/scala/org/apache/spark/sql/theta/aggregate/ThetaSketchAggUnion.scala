@@ -25,7 +25,6 @@ import org.apache.spark.sql.catalyst.expressions.{ExpectsInputTypes, Expression,
 import org.apache.spark.sql.catalyst.expressions.aggregate.TypedImperativeAggregate
 import org.apache.spark.sql.catalyst.trees.BinaryLike
 import org.apache.spark.sql.types.{AbstractDataType, DataType, IntegerType, ThetaSketchWrapper, ThetaSketchType}
-import org.apache.spark.SparkUnsupportedOperationException
 
 /**
  * Theta Union operation.
@@ -60,9 +59,8 @@ case class ThetaSketchAggUnion(
     right.eval() match {
       case null => 12
       case lgk: Int => lgk
-      case _ => throw new SparkUnsupportedOperationException(
-        s"Unsupported input type ${right.dataType.catalogString}",
-        Map("dataType" -> dataType.toString))
+      case _ => throw new IllegalArgumentException(
+        s"Unsupported input type ${right.dataType.catalogString}")
     }
   }
 
@@ -97,9 +95,8 @@ case class ThetaSketchAggUnion(
       left.dataType match {
         case ThetaSketchType =>
           wrapper.union.get.union(Sketch.wrap(Memory.wrap(bytes.asInstanceOf[Array[Byte]])))
-        case _ => throw new SparkUnsupportedOperationException(
-          s"Unsupported input type ${left.dataType.catalogString}",
-          Map("dataType" -> dataType.toString))
+        case _ => throw new IllegalArgumentException(
+          s"Unsupported input type ${left.dataType.catalogString}")
       }
     }
     wrapper

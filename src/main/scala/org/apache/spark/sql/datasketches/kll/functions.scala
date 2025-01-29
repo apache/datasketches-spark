@@ -15,16 +15,18 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql
+package org.apache.spark.sql.datasketches.kll
 
+import org.apache.spark.sql.Column
 import org.apache.spark.sql.catalyst.expressions.Literal
 import org.apache.spark.sql.functions.lit
 import org.apache.spark.sql.types.{ArrayType, BooleanType, DoubleType}
 
-import org.apache.spark.sql.aggregate.{KllDoublesSketchAggMerge, KllDoublesSketchAggBuild}
-import org.apache.spark.sql.expressions.{KllDoublesSketchGetMin, KllDoublesSketchGetMax, KllDoublesSketchGetPmfCdf}
+import org.apache.spark.sql.datasketches.common.DatasketchesScalaFunctionBase
+import org.apache.spark.sql.datasketches.kll.aggregate.{KllDoublesSketchAggMerge, KllDoublesSketchAggBuild}
+import org.apache.spark.sql.datasketches.kll.expressions.{KllDoublesSketchGetMin, KllDoublesSketchGetMax, KllDoublesSketchGetPmfCdf}
 
-object functions_datasketches_kll extends DatasketchesScalaFunctionBase {
+object functions extends DatasketchesScalaFunctionBase {
 
   // build sketch
   def kll_sketch_double_agg_build(expr: Column, k: Column): Column = withAggregateFunction {

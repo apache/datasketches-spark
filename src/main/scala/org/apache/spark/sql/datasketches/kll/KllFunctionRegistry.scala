@@ -15,18 +15,23 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql.registrar
+package org.apache.spark.sql.datasketches.kll
 
 import org.apache.spark.sql.catalyst.analysis.FunctionRegistry.FunctionBuilder
 import org.apache.spark.sql.catalyst.expressions.{ExpressionInfo}
 
-import org.apache.spark.sql.aggregate.{ThetaSketchAggBuild, ThetaSketchAggUnion}
-import org.apache.spark.sql.expressions.ThetaSketchGetEstimate
+import org.apache.spark.sql.datasketches.common.DatasketchesFunctionRegistry
+import org.apache.spark.sql.datasketches.kll.aggregate.{KllDoublesSketchAggBuild, KllDoublesSketchAggMerge}
+import org.apache.spark.sql.datasketches.kll.expressions.{KllDoublesSketchGetMin, KllDoublesSketchGetMax, KllDoublesSketchGetPmf, KllDoublesSketchGetCdf}
+import org.apache.spark.sql.datasketches.common.DatasketchesFunctionRegistry
 
-object ThetaFunctionRegistry extends DatasketchesFunctionRegistry {
+object KllFunctionRegistry extends DatasketchesFunctionRegistry {
   override val expressions: Map[String, (ExpressionInfo, FunctionBuilder)] = Map(
-    expression[ThetaSketchAggBuild]("theta_sketch_agg_build"),
-    expression[ThetaSketchAggUnion]("theta_sketch_agg_union"),
-    expression[ThetaSketchGetEstimate]("theta_sketch_get_estimate")
+    expression[KllDoublesSketchAggBuild]("kll_sketch_double_agg_build"),
+    expression[KllDoublesSketchAggMerge]("kll_sketch_double_agg_merge"),
+    expression[KllDoublesSketchGetMin]("kll_sketch_double_get_min"),
+    expression[KllDoublesSketchGetMax]("kll_sketch_double_get_max"),
+    expression[KllDoublesSketchGetPmf]("kll_sketch_double_get_pmf"),
+    expression[KllDoublesSketchGetCdf]("kll_sketch_double_get_cdf"),
   )
 }

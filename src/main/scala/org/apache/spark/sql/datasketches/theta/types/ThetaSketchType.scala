@@ -15,17 +15,25 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql
+package org.apache.spark.sql.datasketches.theta.types
 
-import org.apache.spark.sql.catalyst.expressions.Expression
-import org.apache.spark.sql.catalyst.expressions.aggregate.AggregateFunction
+import org.apache.spark.sql.types.{DataType, DataTypes, UserDefinedType}
 
-// this interfact provides a few helper methods defines and maps all the variants of each function invocation, analagous
-// to the functions object in core Spark's org.apache.spark.sql.functions
-trait DatasketchesScalaFunctionBase {
-  protected def withExpr(expr: => Expression): Column = Column(expr)
+class ThetaSketchType extends UserDefinedType[ThetaSketchWrapper] {
+  override def sqlType: DataType = DataTypes.BinaryType
 
-  protected def withAggregateFunction(func: AggregateFunction): Column = {
-    Column(func.toAggregateExpression())
+  override def serialize(wrapper: ThetaSketchWrapper): Array[Byte] = {
+    wrapper.serialize
   }
+
+  override def deserialize(data: Any): ThetaSketchWrapper = {
+    val bytes = data.asInstanceOf[Array[Byte]]
+    ThetaSketchWrapper.deserialize(bytes)
+  }
+
+  override def userClass: Class[ThetaSketchWrapper] = classOf[ThetaSketchWrapper]
+
+  override def catalogString: String = "ThetaSketch"
 }
+
+case object ThetaSketchType extends ThetaSketchType

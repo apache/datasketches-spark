@@ -15,12 +15,12 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql.expressions
+package org.apache.spark.sql.datasketches.kll.expressions
 
 import org.apache.datasketches.memory.Memory
 import org.apache.datasketches.kll.KllDoublesSketch
 import org.apache.datasketches.quantilescommon.QuantileSearchCriteria
-import org.apache.spark.sql.types.KllDoublesSketchType
+import org.apache.spark.sql.datasketches.kll.types.KllDoublesSketchType
 
 import org.apache.spark.sql.types.{AbstractDataType, ArrayType, BooleanType, DataType, DoubleType}
 import org.apache.spark.sql.catalyst.expressions.{Expression, ExpressionDescription, ExpectsInputTypes, ImplicitCastInputTypes}

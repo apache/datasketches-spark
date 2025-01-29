@@ -15,14 +15,16 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql.aggregate
+package org.apache.spark.sql.datasketches.kll.aggregate
 
 import org.apache.datasketches.kll.{KllSketch, KllDoublesSketch}
+import org.apache.spark.sql.datasketches.kll.types.KllDoublesSketchType
+
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.{ExpectsInputTypes, Expression, ExpressionDescription, Literal}
 import org.apache.spark.sql.catalyst.expressions.aggregate.TypedImperativeAggregate
 import org.apache.spark.sql.catalyst.trees.BinaryLike
-import org.apache.spark.sql.types.{AbstractDataType, DataType, IntegerType, LongType, NumericType, FloatType, DoubleType, KllDoublesSketchType}
+import org.apache.spark.sql.types.{AbstractDataType, DataType, IntegerType, LongType, NumericType, FloatType, DoubleType}
 import org.apache.spark.sql.catalyst.analysis.TypeCheckResult
 
 /**

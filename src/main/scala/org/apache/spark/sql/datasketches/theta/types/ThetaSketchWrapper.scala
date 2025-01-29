@@ -15,10 +15,11 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql.types
+package org.apache.spark.sql.datasketches.theta.types
 
 import org.apache.datasketches.theta.{UpdateSketch, CompactSketch, Union}
 import org.apache.datasketches.memory.Memory
+import org.apache.spark.sql.types.SQLUserDefinedType
 
 @SQLUserDefinedType(udt = classOf[ThetaSketchType])
 class ThetaSketchWrapper(var updateSketch: Option[UpdateSketch] = None, var compactSketch: Option[CompactSketch] = None, var union: Option[Union] = None) {

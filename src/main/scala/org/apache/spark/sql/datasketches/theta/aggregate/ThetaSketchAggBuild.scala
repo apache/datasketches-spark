@@ -15,14 +15,16 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql.aggregate
+package org.apache.spark.sql.datasketches.theta.aggregate
 
 import org.apache.datasketches.theta.{UpdateSketch, SetOperation}
+import org.apache.spark.sql.datasketches.theta.types.{ThetaSketchType, ThetaSketchWrapper}
+
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.{ExpectsInputTypes, Expression, ExpressionDescription, Literal}
 import org.apache.spark.sql.catalyst.expressions.aggregate.TypedImperativeAggregate
 import org.apache.spark.sql.catalyst.trees.BinaryLike
-import org.apache.spark.sql.types.{AbstractDataType, DataType, IntegerType, LongType, NumericType, FloatType, DoubleType, ThetaSketchWrapper, ThetaSketchType}
+import org.apache.spark.sql.types.{AbstractDataType, DataType, IntegerType, LongType, NumericType, FloatType, DoubleType}
 
 /**
  * The ThetaSketchBuild function creates a Theta sketch from a column of values

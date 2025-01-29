@@ -21,8 +21,8 @@ import org.apache.spark.sql.Column
 import org.apache.spark.sql.functions.lit
 
 import org.apache.spark.sql.datasketches.common.DatasketchesScalaFunctionBase
-import org.apache.spark.sql.aggregate.{ThetaSketchAggBuild, ThetaSketchAggUnion}
-import org.apache.spark.sql.expressions.ThetaSketchGetEstimate
+import org.apache.spark.sql.datasketches.theta.aggregate.{ThetaSketchAggBuild, ThetaSketchAggUnion}
+import org.apache.spark.sql.datasketches.theta.expressions.ThetaSketchGetEstimate
 import org.apache.spark.sql.datasketches.common.DatasketchesScalaFunctionBase
 
 object functions extends DatasketchesScalaFunctionBase {

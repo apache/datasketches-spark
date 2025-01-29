@@ -15,7 +15,9 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql.types
+package org.apache.spark.sql.datasketches.theta.types
+
+import org.apache.spark.sql.types.{DataType, DataTypes, UserDefinedType}
 
 class ThetaSketchType extends UserDefinedType[ThetaSketchWrapper] {
   override def sqlType: DataType = DataTypes.BinaryType

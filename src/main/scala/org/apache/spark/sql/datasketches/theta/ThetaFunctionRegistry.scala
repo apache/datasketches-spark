@@ -21,8 +21,8 @@ import org.apache.spark.sql.catalyst.analysis.FunctionRegistry.FunctionBuilder
 import org.apache.spark.sql.catalyst.expressions.{ExpressionInfo}
 
 import org.apache.spark.sql.datasketches.common.DatasketchesFunctionRegistry
-import org.apache.spark.sql.aggregate.{ThetaSketchAggBuild, ThetaSketchAggUnion}
-import org.apache.spark.sql.expressions.ThetaSketchGetEstimate
+import org.apache.spark.sql.datasketches.theta.aggregate.{ThetaSketchAggBuild, ThetaSketchAggUnion}
+import org.apache.spark.sql.datasketches.theta.expressions.ThetaSketchGetEstimate
 import org.apache.spark.sql.datasketches.common.DatasketchesFunctionRegistry
 
 object ThetaFunctionRegistry extends DatasketchesFunctionRegistry {

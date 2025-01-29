@@ -15,16 +15,17 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql.expressions
+package org.apache.spark.sql.datasketches.theta.expressions
 
 import org.apache.datasketches.memory.Memory
 import org.apache.datasketches.theta.Sketch
+import org.apache.spark.sql.datasketches.theta.types.ThetaSketchType
 
 import org.apache.spark.sql.catalyst.expressions.{Expression, ExpectsInputTypes, UnaryExpression}
 import org.apache.spark.sql.catalyst.expressions.NullIntolerant
 import org.apache.spark.sql.catalyst.expressions.ExpressionDescription
 import org.apache.spark.sql.catalyst.expressions.codegen.{CodeBlock, CodegenContext, ExprCode}
-import org.apache.spark.sql.types.{AbstractDataType, DataType, DoubleType, ThetaSketchType}
+import org.apache.spark.sql.types.{AbstractDataType, DataType, DoubleType}
 
 @ExpressionDescription(
   usage = """

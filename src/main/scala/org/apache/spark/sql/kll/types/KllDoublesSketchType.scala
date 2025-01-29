@@ -15,11 +15,12 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql.types
+package org.apache.spark.sql.datasketches.kll.types
 
 import org.apache.spark.sql.functions.udf
 import org.apache.datasketches.kll.KllDoublesSketch
 import org.apache.datasketches.memory.Memory
+import org.apache.spark.sql.types.{DataType, DataTypes, UDTRegistration, UserDefinedType}
 
 class KllDoublesSketchType extends UserDefinedType[KllDoublesSketch] with Serializable {
   override def sqlType: DataType = DataTypes.BinaryType

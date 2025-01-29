@@ -15,10 +15,12 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql
+package org.apache.spark.sql.theta
 
-import org.apache.spark.sql.functions_datasketches_theta._
-import org.apache.spark.sql.registrar.ThetaFunctionRegistry
+import org.apache.spark.sql.Row
+import org.apache.spark.sql.datasketches.common.SparkSessionManager
+import org.apache.spark.sql.datasketches.theta.functions._
+import org.apache.spark.sql.datasketches.theta.ThetaFunctionRegistry
 
 class ThetaTest extends SparkSessionManager {
   import spark.implicits._

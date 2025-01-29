@@ -15,16 +15,17 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql
+package org.apache.spark.sql.datasketches.kll
 
 import scala.util.Random
+import org.apache.spark.sql.Row
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types.{StructType, StructField, IntegerType, BinaryType}
 
-import org.apache.spark.sql.functions_datasketches_kll._
 import org.apache.datasketches.kll.KllDoublesSketch
-import org.apache.spark.sql.types.KllDoublesSketchType
-import org.apache.spark.sql.registrar.KllFunctionRegistry
+import org.apache.spark.sql.datasketches.kll.functions._
+import org.apache.spark.sql.datasketches.kll.types.KllDoublesSketchType
+import org.apache.spark.sql.datasketches.common.SparkSessionManager
 
 class KllTest extends SparkSessionManager {
   import spark.implicits._

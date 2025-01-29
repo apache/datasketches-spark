@@ -15,10 +15,11 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql
+package org.apache.spark.sql.datasketches.common
 
 import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.catalyst.expressions.aggregate.AggregateFunction
+import org.apache.spark.sql.Column
 
 // this interfact provides a few helper methods defines and maps all the variants of each function invocation, analagous
 // to the functions object in core Spark's org.apache.spark.sql.functions

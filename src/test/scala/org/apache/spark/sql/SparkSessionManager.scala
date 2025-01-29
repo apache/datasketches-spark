@@ -15,11 +15,12 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql
+package org.apache.spark.sql.datasketches.common
 
 import org.apache.log4j.{Level, Logger}
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AnyFunSuite
+import org.apache.spark.sql.SparkSession
 
 /**
   * This class provides a common base for tests. It can perhaps

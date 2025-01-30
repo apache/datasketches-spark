@@ -74,8 +74,9 @@ case class KllDoublesSketchGetMin(sketchExpr: Expression)
          |${sketchEval.code}
          |final org.apache.datasketches.kll.KllDoublesSketch $sketch = org.apache.spark.sql.datasketches.kll.types.KllDoublesSketchType.wrap(${sketchEval.value});
          |final double ${ev.value} = $sketch.getMinItem();
+         |final boolean ${ev.isNull} = ${sketchEval.isNull};
        """.stripMargin
-    ev.copy(code = CodeBlock(Seq(code), Seq.empty), isNull = sketchEval.isNull)
+    ev.copy(code = CodeBlock(Seq(code), Seq.empty))
   }
 
   override def doGenCode(ctx: CodegenContext, ev: ExprCode): ExprCode = {
@@ -126,8 +127,9 @@ case class KllDoublesSketchGetMax(sketchExpr: Expression)
          |${sketchEval.code}
          |final org.apache.datasketches.kll.KllDoublesSketch $sketch = org.apache.spark.sql.datasketches.kll.types.KllDoublesSketchType.wrap(${sketchEval.value});
          |final double ${ev.value} = $sketch.getMaxItem();
+         |final boolean ${ev.isNull} = ${sketchEval.isNull};
        """.stripMargin
-    ev.copy(code = CodeBlock(Seq(code), Seq.empty), isNull = sketchEval.isNull)
+    ev.copy(code = CodeBlock(Seq(code), Seq.empty))
   }
 
   override def doGenCode(ctx: CodegenContext, ev: ExprCode): ExprCode = {
@@ -289,13 +291,12 @@ case class KllDoublesSketchGetPmfCdf(sketchExpr: Expression,
       s"""
          |${sketchEval.code}
          |${splitPointsEval.code}
-         |if (!${sketchEval.isNull} && !${splitPointsEval.isNull}) {
-         |  org.apache.datasketches.quantilescommon.QuantileSearchCriteria searchCriteria = ${if (isInclusive) "org.apache.datasketches.quantilescommon.QuantileSearchCriteria.INCLUSIVE" else "org.apache.datasketches.quantilescommon.QuantileSearchCriteria.EXCLUSIVE"};
-         |  final org.apache.datasketches.kll.KllDoublesSketch $sketch = org.apache.spark.sql.datasketches.kll.types.KllDoublesSketchType.wrap(${sketchEval.value});
-         |  final double[] splitPoints = ((org.apache.spark.sql.catalyst.util.GenericArrayData)${splitPointsEval.value}).toDoubleArray();
-         |  final double[] result = ${if (isPmf) s"$sketch.getPMF(splitPoints, searchCriteria)" else s"$sketch.getCDF(splitPoints, searchCriteria)"};
-         |  org.apache.spark.sql.catalyst.util.GenericArrayData ${ev.value} = new org.apache.spark.sql.catalyst.util.GenericArrayData(result);
-         |}
+         |org.apache.datasketches.quantilescommon.QuantileSearchCriteria searchCriteria = ${if (isInclusive) "org.apache.datasketches.quantilescommon.QuantileSearchCriteria.INCLUSIVE" else "org.apache.datasketches.quantilescommon.QuantileSearchCriteria.EXCLUSIVE"};
+         |final org.apache.datasketches.kll.KllDoublesSketch $sketch = org.apache.spark.sql.datasketches.kll.types.KllDoublesSketchType.wrap(${sketchEval.value});
+         |final double[] splitPoints = ((org.apache.spark.sql.catalyst.util.GenericArrayData)${splitPointsEval.value}).toDoubleArray();
+         |final double[] result = ${if (isPmf) s"$sketch.getPMF(splitPoints, searchCriteria)" else s"$sketch.getCDF(splitPoints, searchCriteria)"};
+         |final boolean ${ev.isNull} = false;
+         |org.apache.spark.sql.catalyst.util.GenericArrayData ${ev.value} = new org.apache.spark.sql.catalyst.util.GenericArrayData(result);
        """.stripMargin
     ev.copy(code = CodeBlock(Seq(code), Seq.empty))
   }

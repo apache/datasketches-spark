@@ -73,4 +73,6 @@ def _array_as_java_column(data: Union[list, tuple]) -> Column:
     Converts a Python list or tuple to a Spark DataFrame column.
     """
     sc = SparkContext._active_spark_context
-    return _invoke_function(_get_spark_functions_class(), "array", _to_seq(sc, [_create_column_from_literal(x) for x in data])._jc)
+    col = _to_seq(sc, [_create_column_from_literal(x) for x in data])
+    return _invoke_function(_get_spark_functions_class(), "array", col)._jc
+    #return _invoke_function(_get_spark_functions_class(), "array", _to_seq(sc, [_create_column_from_literal(x) for x in data]))._jc

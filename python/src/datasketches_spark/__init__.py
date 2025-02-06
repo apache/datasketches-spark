@@ -18,5 +18,5 @@ Provided under the Apache License, Version 2.0
 name = 'datasketches_spark'
 
 from .common import *
-from .common import _invoke_function_over_columns
+#from .common import _invoke_function_over_columns
 from .kll import *

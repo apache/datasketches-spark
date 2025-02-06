@@ -15,8 +15,31 @@ from py4j.java_gateway import JavaClass
 from typing import Any, TypeVar, Union, Callable
 from functools import lru_cache
 
+import os
+import pkg_resources
+
 ColumnOrName = Union[Column, str]
 ColumnOrName_ = TypeVar("ColumnOrName_", bound=ColumnOrName)
+
+def get_jar_paths(*jar_names: str) -> list[str]:
+    """
+    Returns a list of absolute paths to the provided jars,\n
+    assuming they are included in the package.
+    :param jar_names: Names of jars to retrieve
+    :return: List of absolute paths to jars
+    """
+    jar_paths = []
+    for jar_name in jar_names:
+        try:
+            jar_path = pkg_resources.resource_filename(__name__, f"deps/{jar_name}")
+            if os.path.exists(jar_path):
+                jar_paths.append(jar_path)
+            else:
+                raise FileNotFoundError(f"Jar {jar_name} not found in package")
+        except ValueError:
+            raise FileNotFoundError(f"Jar {jar_name} not found in package")
+    return jar_paths
+
 
 # Since we have functions from different packages, rather than the
 # single 16k+ line functions class in core Spark, we'll have each

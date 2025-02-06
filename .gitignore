@@ -14,8 +14,9 @@
 *.iws
 
 # Scala project files and related plugins
+project/target
+project/build.properties
 target/
-project/
 .bsp/
 .bloop/
 .metals/
@@ -47,27 +48,6 @@ bin/
 
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
-
-#Test config and output
-test-output/
-local/
-reports/
-.pmd
-tmp/
-
-# Build artifacts
-target/
-serialization_test_data/
-out/
-build/
-jarsIn/
-build.xml
-*.properties
-*.releaseBackup
-*.next
-*.tag
-doc/
-
 
 # Sketch binary test files
 *.sk

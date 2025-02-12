@@ -16,24 +16,12 @@
  */
 
 import scala.xml.dtd.DEFAULT
-import scala.io.Source
 
 import BuildUtils._
 
 val DEFAULT_SCALA_VERSION = "2.12.20"
 val DEFAULT_SPARK_VERSION = "3.5.4"
-val DEFAULT_JDK_VERSION = "17"
-
-// Map of JVM version prefix to:
-// (JVM major version, datasketches-java version)
-// TODO: consider moving to external file
-val jvmVersionMap = Map(
-  "21" -> ("21", "8.0.0"),
-  "17" -> ("17", "7.0.1"),
-  "11" -> ("11", "6.2.0"),
-  "8"  -> ("8",  "6.2.0"),
-  "1.8" -> ("8", "6.2.0")
-)
+val DEFAULT_JDK_VERSION = "11"
 
 // version processing logic
 val scalaVersion = settingKey[String]("The version of Scala")
@@ -56,10 +44,12 @@ val dsJavaVersionValue = jvmVersionMap.get(jvmVersionValue).map(_._2).getOrElse(
 
 lazy val copyDatasketchesDependencies = taskKey[Seq[File]]("Copy dependencies to a known location")
 
+lazy val cleanPythonVersionFile = taskKey[Unit]("Clean the python version file")
+
 lazy val root = (project in file("."))
   .settings(
     name := "datasketches-spark",
-    version := readVersion("version.cfg.in"),
+    version := readVersionAndCopyToPython("version.cfg"),
     organization := "org.apache.datasketches",
     description := "The Apache DataSketches package for Spark",
     licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0")),
@@ -90,18 +80,13 @@ lazy val root = (project in file("."))
       // we want to copy non-provided/non-test dependencies to a known location
       // so that they can be obtained easily
       val targetLibDir = target.value / "lib"
-      IO.createDirectory(targetLibDir)
-      val dependencyJars = (Compile / dependencyClasspath).value.collect {
-        case attr if (attr.data.getName.startsWith("datasketches-java") || attr.data.getName.startsWith("datasketches-memory"))
-                      && attr.data.getName.endsWith(".jar") =>
-          val file = attr.data
-          val targetFile = targetLibDir / file.getName
-          IO.copyFile(file, targetFile)
-          targetFile
-      }
-      dependencyJars
+      val listFile = targetLibDir / "dependencies.txt"
+      val dependencies = (Compile / dependencyClasspath).value
+      BuildUtils.copyDependenciesAndWriteList(targetLibDir, dependencies, listFile)
     },
-    Compile / packageBin := (Compile / packageBin).dependsOn(copyDatasketchesDependencies).value,
+    Compile / packageBin := (Compile / packageBin)
+      .dependsOn(copyDatasketchesDependencies)
+      .andFinally(readVersionAndCopyToPython("version.cfg")).value,
     Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-oD"),
     // additional options for java 17
     Test / fork := {
@@ -118,6 +103,7 @@ lazy val root = (project in file("."))
       }
     },
     Test / logBuffered := false,
-    // Level.INFO is needed to see detailed output when running tests
-    Test / logLevel := Level.Info
+    Test / logLevel := Level.Info,
+    cleanPythonVersionFile := BuildUtils.cleanPythonVersionFile(),
+    clean := clean.dependsOn(cleanPythonVersionFile).value
   )

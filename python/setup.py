@@ -15,18 +15,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-#import importlib.util
 import glob
 import os
 import sys
-#import ctypes
 from setuptools import setup, find_packages
 #from setuptools.command.install import install
 from shutil import copyfile #, copytree, rmtree
 
 DS_SPARK_HOME = os.environ.get("DS_SPARK_HOME", os.path.abspath("../"))
-with open(f'{DS_SPARK_HOME}/version.cfg.in', 'r') as file:
-    VERSION = file.read().rstrip()
+#with open(f'{DS_SPARK_HOME}/version.cfg.in', 'r') as file:
+#    VERSION = file.read().rstrip()
 TEMP_PATH = "src/datasketches_spark/deps" # we can store the relevant jars in here
 
 # An error message if trying to run this without first building the jars
@@ -37,29 +35,24 @@ from source, you need to first build the jars.
 To build the jars, run the following command from the root directory of
 the repository:
     sbt clean package
-Next, you can return to this diretory and resume.
+
+If building for pyspark, you should build the jar with any versiion of
+Scala you may expect to use. The Scala verison can be set via the
+SCALA_VERSION environment variable.
+
+Then return to this diretory and resume building your sdist or wheel.
 """
 
 # Find the datasketches-spark jar path -- other dependencies handled separately
 DS_SPARK_JAR_PATH = glob.glob(os.path.join(DS_SPARK_HOME, "target/scala-*/"))
-if len(DS_SPARK_JAR_PATH) == 1:
-    DS_SPARK_JAR_PATH = DS_SPARK_JAR_PATH[0]
-elif len(DS_SPARK_JAR_PATH) > 1:
-    print(
-        "Found jars for multiple scala versions ({0}). Please clean up the target directory".format(
-            DS_SPARK_JAR_PATH
-        ),
-        file=sys.stderr
-    )
-    sys.exit(-1)
-elif len(DS_SPARK_JAR_PATH) == 0: # core spark also checks for TEMP_PATH -- unclear why?
+if len(DS_SPARK_JAR_PATH) == 0:
     print(missing_jars_message, file=sys.stderr)
     sys.exit(-1)
 
 # Find the datasketches-java and datasketches-memory dependency jar path
-DS_JAVA_JAR_PATH = glob.glob(os.path.join(DS_SPARK_HOME, "target/lib/"))
-if len(DS_JAVA_JAR_PATH) == 1:
-    DS_JAVA_JAR_PATH = DS_JAVA_JAR_PATH[0]
+DS_JAVA_LIB_PATH = glob.glob(os.path.join(DS_SPARK_HOME, "target/lib/"))
+if len(DS_JAVA_LIB_PATH) == 1:
+    DS_JAVA_LIB_PATH = DS_JAVA_LIB_PATH[0]
 else: # error if something other than 1 directory found
     print(missing_jars_message, file=sys.stderr)
     sys.exit(-1)
@@ -73,27 +66,33 @@ except OSError:
     pass
 
 # Copy the relevant jar files to temp path
-for jar_file in glob.glob(os.path.join(DS_SPARK_JAR_PATH, f"datasketches-spark_*-{VERSION}.jar")):
+for path in DS_SPARK_JAR_PATH:
+    #for jar_file in glob.glob(os.path.join(path, f"datasketches-spark_*-{VERSION}.jar")):
+    for jar_file in glob.glob(os.path.join(path, f"datasketches-spark_*.jar")):
+        copyfile(jar_file, os.path.join(TEMP_PATH, os.path.basename(jar_file)))
+
+# copy any ds-java and ds-memory jars, and dependencies.txt, too
+for jar_file in glob.glob(os.path.join(DS_JAVA_LIB_PATH, f"datasketches-java-*.jar")):
     copyfile(jar_file, os.path.join(TEMP_PATH, os.path.basename(jar_file)))
-for jar_file in glob.glob(os.path.join(DS_JAVA_JAR_PATH, f"datasketches-java-*.jar")):
+for jar_file in glob.glob(os.path.join(DS_JAVA_LIB_PATH, f"datasketches-memory-*.jar")):
     copyfile(jar_file, os.path.join(TEMP_PATH, os.path.basename(jar_file)))
-for jar_file in glob.glob(os.path.join(DS_JAVA_JAR_PATH, f"datasketches-memory-*.jar")):
+for jar_file in glob.glob(os.path.join(DS_JAVA_LIB_PATH, f"dependencies.txt")):
     copyfile(jar_file, os.path.join(TEMP_PATH, os.path.basename(jar_file)))
 
 setup(
-    name='datasketches_spark',
-    version=VERSION,
-    author='Apache Software Foundation',
-    author_email='dev@datasketches.apache.org',
-    description='The Apache DataSketches Library for Python',
-    license='Apache License 2.0',
-    url='http://datasketches.apache.org',
-    long_description=open('README.md').read(),
-    long_description_content_type='text/markdown',
-    include_package_data=True,
-    package_dir={'':'src'},
-    packages=find_packages(where='src'),
-    install_requires=['pyspark'],
-    python_requires='>=3.8',
-    zip_safe=False
+    #version = VERSION
+    # name='datasketches_spark',
+    # author='Apache Software Foundation',
+    # author_email='dev@datasketches.apache.org',
+    # description='The Apache DataSketches Library for Python',
+    # license='Apache License 2.0',
+    # url='http://datasketches.apache.org',
+    # long_description=open('README.md').read(),
+    # long_description_content_type='text/markdown',
+    # include_package_data=True,
+    # package_dir={'':'src'},
+    # packages=find_packages(where='src'),
+    # install_requires=['pyspark'],
+    # python_requires='>=3.8',
+    # zip_safe=False
 )

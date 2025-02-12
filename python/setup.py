@@ -18,14 +18,11 @@
 import glob
 import os
 import sys
-from setuptools import setup, find_packages
-#from setuptools.command.install import install
-from shutil import copyfile #, copytree, rmtree
+from setuptools import setup
+from shutil import copyfile
 
 DS_SPARK_HOME = os.environ.get("DS_SPARK_HOME", os.path.abspath("../"))
-#with open(f'{DS_SPARK_HOME}/version.cfg.in', 'r') as file:
-#    VERSION = file.read().rstrip()
-TEMP_PATH = "src/datasketches_spark/deps" # we can store the relevant jars in here
+DEPS_PATH = "src/datasketches_spark/deps" # we can store the relevant jars in here
 
 # An error message if trying to run this without first building the jars
 missing_jars_message = """
@@ -42,6 +39,9 @@ SCALA_VERSION environment variable.
 
 Then return to this diretory and resume building your sdist or wheel.
 """
+
+# TODO: for tox, check if files exist in DEPTS_PATH
+# can copy if /target is newer or dept does not have files
 
 # Find the datasketches-spark jar path -- other dependencies handled separately
 DS_SPARK_JAR_PATH = glob.glob(os.path.join(DS_SPARK_HOME, "target/scala-*/"))
@@ -60,24 +60,23 @@ else: # error if something other than 1 directory found
 # Copy the jars to the temporary directory
 # Future possible enhancement: symlink instead of copy
 try:
-    os.makedirs(TEMP_PATH)
+    os.makedirs(DEPS_PATH)
 except OSError:
     # we don't care if it already exists
     pass
 
 # Copy the relevant jar files to temp path
 for path in DS_SPARK_JAR_PATH:
-    #for jar_file in glob.glob(os.path.join(path, f"datasketches-spark_*-{VERSION}.jar")):
     for jar_file in glob.glob(os.path.join(path, f"datasketches-spark_*.jar")):
-        copyfile(jar_file, os.path.join(TEMP_PATH, os.path.basename(jar_file)))
+        copyfile(jar_file, os.path.join(DEPS_PATH, os.path.basename(jar_file)))
 
 # copy any ds-java and ds-memory jars, and dependencies.txt, too
 for jar_file in glob.glob(os.path.join(DS_JAVA_LIB_PATH, f"datasketches-java-*.jar")):
-    copyfile(jar_file, os.path.join(TEMP_PATH, os.path.basename(jar_file)))
+    copyfile(jar_file, os.path.join(DEPS_PATH, os.path.basename(jar_file)))
 for jar_file in glob.glob(os.path.join(DS_JAVA_LIB_PATH, f"datasketches-memory-*.jar")):
-    copyfile(jar_file, os.path.join(TEMP_PATH, os.path.basename(jar_file)))
+    copyfile(jar_file, os.path.join(DEPS_PATH, os.path.basename(jar_file)))
 for jar_file in glob.glob(os.path.join(DS_JAVA_LIB_PATH, f"dependencies.txt")):
-    copyfile(jar_file, os.path.join(TEMP_PATH, os.path.basename(jar_file)))
+    copyfile(jar_file, os.path.join(DEPS_PATH, os.path.basename(jar_file)))
 
 setup(
     #version = VERSION

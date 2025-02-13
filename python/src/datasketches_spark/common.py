@@ -20,31 +20,44 @@ from pyspark.sql.column import Column, _to_java_column, _to_seq, _create_column_
 from py4j.java_gateway import JavaClass
 from typing import Any, TypeVar, Union, Callable
 from functools import lru_cache
+from ._version import __version__
 
 import os
-import pkg_resources
+import importlib.resources
 
 ColumnOrName = Union[Column, str]
 ColumnOrName_ = TypeVar("ColumnOrName_", bound=ColumnOrName)
 
-def get_jar_paths(*jar_names: str) -> list[str]:
+def get_dependency_path(filename: str) -> str:
     """
-    Returns a list of absolute paths to the provided jars,\n
-    assuming they are included in the package.
-    :param jar_names: Names of jars to retrieve
-    :return: List of absolute paths to jars
+    Returns a list of absolute paths to the specified file,\n
+    it is included in the package's /deps subdir.
+    :param filename: Name of file to retrieve
+    :return: Absolute paths to filename
+    :exception FileNotFoundError: If a file is not found in the package
     """
-    jar_paths = []
-    for jar_name in jar_names:
-        try:
-            jar_path = pkg_resources.resource_filename(__name__, f"deps/{jar_name}")
-            if os.path.exists(jar_path):
-                jar_paths.append(jar_path)
-            else:
-                raise FileNotFoundError(f"Jar {jar_name} not found in package")
-        except ValueError:
-            raise FileNotFoundError(f"Jar {jar_name} not found in package")
-    return jar_paths
+    try:
+        with importlib.resources.path("datasketches_spark.deps", filename) as file_path:
+            return str(file_path)
+    except FileNotFoundError:
+        raise FileNotFoundError(f"File {filename} not found in datasketches_spark.deps")
+
+def get_dependency_classpath() -> list[str]:
+    """
+    Returns a list of absolute paths to the jar files included in the package.\n
+    Assumes that the jar files are located in the package's /deps subdir.
+    """
+
+    # we need whatever is listed in dependencies.txt as well as
+    # datasketches-spark_<scala_veersion>-<ds-spark_version>.jar
+    jar_files = []
+    with importlib.resources.open_text("datasketches_spark.deps", "dependencies.txt") as dependencies:
+        for dep in dependencies:
+            jar_files.append(dep.strip())
+    ds_spark_version = __version__
+    jar_files.append(f"datasketches-spark_{os.environ.get('SCALA_VERSION', '2.12')}-{ds_spark_version}.jar")
+
+    return ":".join([get_dependency_path(jar) for jar in jar_files])
 
 
 # Since we have functions from different packages, rather than the

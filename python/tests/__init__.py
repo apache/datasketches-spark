@@ -14,34 +14,3 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-
-[build-system]
-requires = ["setuptools", "wheel"]
-build-backend = "setuptools.build_meta"
-
-[project]
-name = "datasketches_spark"
-dynamic = ["version"]
-description = "The Apache DataSketches Library for Python"
-authors = [
-  { name = "Apache Software Foundation", email = "dev@datasketches.apache.org" }
-]
-license = { text = "Apache License 2.0" }
-readme = "README.md"
-requires-python = ">=3.8"
-dependencies = [
-  "pyspark"
-]
-
-[tool.setuptools]
-package-dir = { "" = "src" }
-
-[tool.setuptools.dynamic]
-version = { file = "src/datasketches_spark/version.txt" }
-
-[tool.setuptools.package-data]
-datasketches_spark = ["version.txt", "deps/*"]
-
-[tool.cibuildwheel]
-build-verbosity = 0  # options: 1, 2, or 3
-skip = ["cp36-*", "cp37-*", "cp38-*", "pp*", "*-win32"]

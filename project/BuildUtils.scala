@@ -33,8 +33,7 @@ val jvmVersionMap = Map(
 )
 
 // TODO: any way to avoid hardcoding this?
-//val pythonVersionFileName = "python/src/datasketches_spark/version.py"
-val pythonVersionFileName = "python/version.txt"
+val pythonVersionFileName = "python/src/datasketches_spark/version.txt"
 
 // reads the version file, reformats as needed for python, and stores
 // in the python subdirectory as the __version__ function for the package

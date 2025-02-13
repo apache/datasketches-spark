@@ -40,58 +40,38 @@ SCALA_VERSION environment variable.
 Then return to this diretory and resume building your sdist or wheel.
 """
 
-# TODO: for tox, check if files exist in DEPTS_PATH
-# can copy if /target is newer or dept does not have files
+def check_or_copy_files(filename_pattern: str, src: str, dst: str) -> None:
+    """
+    Checks if file(s) exist(s) in dst, updating if src has a newer version
+    """
+
+    # create list in src, check if files exist in dst
+    # copy if src has a newer version
+    src_list = glob.glob(os.path.join(src, filename_pattern))
+    if (len(src_list) > 0):
+        for src_file in src_list:
+            dst_file = os.path.join(dst, os.path.basename(src_file))
+            if os.path.exists(dst_file):
+                if os.path.getmtime(src_file) > os.path.getmtime(dst_file):
+                    copyfile(src_file, dst_file)
+            else:
+                copyfile(src_file, dst_file)
+
+    # copying done, if necessary, so check if file exists in dst
+    dst_file = glob.glob(os.path.join(dst, filename_pattern))
+    if (len(dst_file) == 0):
+        print(missing_jars_message, file=sys.stderr)
+        sys.exit(-1)
+
 
 # Find the datasketches-spark jar path -- other dependencies handled separately
-DS_SPARK_JAR_PATH = glob.glob(os.path.join(DS_SPARK_HOME, "target/scala-*/"))
-if len(DS_SPARK_JAR_PATH) == 0:
-    print(missing_jars_message, file=sys.stderr)
-    sys.exit(-1)
+sbt_scala_dir = os.path.join(DS_SPARK_HOME, "target", "scala-*")
+check_or_copy_files("datasketches-spark_*.jar", sbt_scala_dir, DEPS_PATH)
 
 # Find the datasketches-java and datasketches-memory dependency jar path
-DS_JAVA_LIB_PATH = glob.glob(os.path.join(DS_SPARK_HOME, "target/lib/"))
-if len(DS_JAVA_LIB_PATH) == 1:
-    DS_JAVA_LIB_PATH = DS_JAVA_LIB_PATH[0]
-else: # error if something other than 1 directory found
-    print(missing_jars_message, file=sys.stderr)
-    sys.exit(-1)
+sbt_lib_dir = os.path.join(DS_SPARK_HOME, "target", "lib")
+check_or_copy_files("datasketches-java-*.jar", sbt_lib_dir, DEPS_PATH)
+check_or_copy_files("datasketches-memory-*.jar", sbt_lib_dir, DEPS_PATH)
+check_or_copy_files("dependencies.txt", sbt_lib_dir, DEPS_PATH)
 
-# Copy the jars to the temporary directory
-# Future possible enhancement: symlink instead of copy
-try:
-    os.makedirs(DEPS_PATH)
-except OSError:
-    # we don't care if it already exists
-    pass
-
-# Copy the relevant jar files to temp path
-for path in DS_SPARK_JAR_PATH:
-    for jar_file in glob.glob(os.path.join(path, f"datasketches-spark_*.jar")):
-        copyfile(jar_file, os.path.join(DEPS_PATH, os.path.basename(jar_file)))
-
-# copy any ds-java and ds-memory jars, and dependencies.txt, too
-for jar_file in glob.glob(os.path.join(DS_JAVA_LIB_PATH, f"datasketches-java-*.jar")):
-    copyfile(jar_file, os.path.join(DEPS_PATH, os.path.basename(jar_file)))
-for jar_file in glob.glob(os.path.join(DS_JAVA_LIB_PATH, f"datasketches-memory-*.jar")):
-    copyfile(jar_file, os.path.join(DEPS_PATH, os.path.basename(jar_file)))
-for jar_file in glob.glob(os.path.join(DS_JAVA_LIB_PATH, f"dependencies.txt")):
-    copyfile(jar_file, os.path.join(DEPS_PATH, os.path.basename(jar_file)))
-
-setup(
-    #version = VERSION
-    # name='datasketches_spark',
-    # author='Apache Software Foundation',
-    # author_email='dev@datasketches.apache.org',
-    # description='The Apache DataSketches Library for Python',
-    # license='Apache License 2.0',
-    # url='http://datasketches.apache.org',
-    # long_description=open('README.md').read(),
-    # long_description_content_type='text/markdown',
-    # include_package_data=True,
-    # package_dir={'':'src'},
-    # packages=find_packages(where='src'),
-    # install_requires=['pyspark'],
-    # python_requires='>=3.8',
-    # zip_safe=False
-)
+setup()

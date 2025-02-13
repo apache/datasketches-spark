@@ -15,8 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-include version.txt
-
 graft src
 graft tests
-graft src/datasketches_spark/deps/*
+
+include src/datasketches_spark/deps/*

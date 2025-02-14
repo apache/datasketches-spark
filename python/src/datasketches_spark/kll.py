@@ -17,9 +17,12 @@
 
 from typing import List, Optional, Tuple, Union
 from py4j.java_gateway import JavaClass
-from pyspark.sql.column import Column, _to_java_column, _to_seq, _create_column_from_literal
+from pyspark.sql.column import Column, _to_java_column # possibly fragile
 from pyspark.sql.functions import lit
 from pyspark.sql.utils import try_remote_functions
+
+from pyspark.sql.types import UserDefinedType, BinaryType
+from datasketches import kll_doubles_sketch
 
 from .common import (
                      ColumnOrName,
@@ -37,6 +40,30 @@ def _get_kll_functions_class() -> JavaClass:
         _kll_functions_class = _get_jvm_class("org.apache.spark.sql.datasketches.kll.functions")
     return _kll_functions_class
 
+class KllDoublesSketchUDT(UserDefinedType):
+    """UDT to translate kll_doubles_sketch to/from spark"""
+
+    @classmethod
+    def sqlType(cls):
+        return BinaryType()
+
+    def serialize(self, sketch: kll_doubles_sketch) -> bytes:
+        if sketch is None:
+            return None
+        return sketch.serialize()
+
+    def deserialize(self, data: bytes) -> kll_doubles_sketch:
+        if data is None:
+            return None
+        return kll_doubles_sketch.deserialize(bytes(data))
+
+    @classmethod
+    def module(cls):
+        return "datasketches"
+
+    @classmethod
+    def scalaUDT(cls):
+        return "org.apache.spark.sql.datasketches.kll.KllDoublesSketchType"
 
 @try_remote_functions
 def kll_sketch_double_agg_build(col: "ColumnOrName", k: Optional[Union[int, Column]] = None) -> Column:

@@ -25,6 +25,10 @@ import org.apache.spark.sql.types.{DataType, DataTypes, UDTRegistration, UserDef
 class KllDoublesSketchType extends UserDefinedType[KllDoublesSketch] with Serializable {
   override def sqlType: DataType = DataTypes.BinaryType
 
+  override def serializedPyClass: String = "bytes"
+
+  override def pyUDT: String = "datasketches_spark.KllDoublesSketchUDT"
+
   override def serialize(wrapper: KllDoublesSketch): Array[Byte] = {
     wrapper.toByteArray
   }

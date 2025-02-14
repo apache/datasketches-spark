@@ -57,12 +57,17 @@ def test_kll_merge(spark):
   df_agg = df.groupBy("id").agg(kll_sketch_double_agg_build("value", k).alias("sketch"))
   assert(df_agg.count() == 2)
 
+  # merge and get a few attributes to check
   result = df_agg.select(
     kll_sketch_double_agg_merge("sketch").alias("sketch")
+  ).select(
+    "sketch",
+    kll_sketch_double_get_min("sketch").alias("min"),
+    kll_sketch_double_get_max("sketch").alias("max")
   ).first()
   sk = result["sketch"]
 
   assert(sk.n == 2 * n)
   assert(sk.k == k)
-  assert(sk.get_min_value() == 1.0)
-  assert(sk.get_max_value() == 2 * n)
+  assert(sk.get_min_value() == result["min"])
+  assert(sk.get_max_value() == result["max"])

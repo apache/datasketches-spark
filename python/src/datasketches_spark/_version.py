@@ -15,11 +15,11 @@
 # specific language governing permissions and limitations
 # under the License.
 
-import importlib.resources
+from importlib.resources import files
 
 def get_version():
   try:
-    with importlib.resources.open_text('datasketches_spark', 'version.txt') as f:
+    with (files('datasketches_spark') / 'version.txt').open('r') as f:
       return f.read().strip()
   except:
     return '0.0.0'

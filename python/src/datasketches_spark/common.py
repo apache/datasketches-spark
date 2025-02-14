@@ -23,7 +23,7 @@ from functools import lru_cache
 from ._version import __version__
 
 import os
-import importlib.resources
+from importlib.resources import files, as_file
 
 ColumnOrName = Union[Column, str]
 ColumnOrName_ = TypeVar("ColumnOrName_", bound=ColumnOrName)
@@ -37,7 +37,7 @@ def get_dependency_path(filename: str) -> str:
     :exception FileNotFoundError: If a file is not found in the package
     """
     try:
-        with importlib.resources.path("datasketches_spark.deps", filename) as file_path:
+        with as_file(files("datasketches_spark.deps") / filename) as file_path:
             return str(file_path)
     except FileNotFoundError:
         raise FileNotFoundError(f"File {filename} not found in datasketches_spark.deps")
@@ -51,7 +51,7 @@ def get_dependency_classpath() -> list[str]:
     # we need whatever is listed in dependencies.txt as well as
     # datasketches-spark_<scala_veersion>-<ds-spark_version>.jar
     jar_files = []
-    with importlib.resources.open_text("datasketches_spark.deps", "dependencies.txt") as dependencies:
+    with (files("datasketches_spark.deps") / "dependencies.txt").open('r') as dependencies:
         for dep in dependencies:
             jar_files.append(dep.strip())
     ds_spark_version = __version__

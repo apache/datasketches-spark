@@ -22,7 +22,7 @@ from setuptools import setup
 from shutil import copyfile
 
 DS_SPARK_HOME = os.environ.get("DS_SPARK_HOME", os.path.abspath("../"))
-DEPS_PATH = "src/datasketches_spark/deps" # we can store the relevant jars in here
+DEPS_PATH = os.path.abspath("src/datasketches_spark/deps") # we can store the relevant jars in here
 
 # An error message if trying to run this without first building the jars
 missing_jars_message = """
@@ -63,6 +63,8 @@ def check_or_copy_files(filename_pattern: str, src: str, dst: str) -> None:
         print(missing_jars_message, file=sys.stderr)
         sys.exit(-1)
 
+# Ensure target directory exists
+os.makedirs(DEPS_PATH, exist_ok=True)
 
 # Find the datasketches-spark jar path -- other dependencies handled separately
 sbt_scala_dir = os.path.join(DS_SPARK_HOME, "target", "scala-*")

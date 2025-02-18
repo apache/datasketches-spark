@@ -21,5 +21,30 @@
 
 This repo is still an early-stage work in progress.
 
-There have been multiple attempts to help integrate Apache DataSketches into Apache Spark, including one built into Spark itself as of v3.5. All are useful work, but in comparing them, there are various limitations to each library. Whether limiting the type of sketches available
-(e.g. native Spark provides only HLL) or limiting flexibility and functionality (e.g. forcing HLL and Theta to use a common interface which precludes set operations HLL cannot support, or using global parameters to control the sizes of all sketch instances in the query), the other libraries place undesirable constraints on developers looking to use sketches in their queries or data systems. This library aims to restore that choice to develoeprs.
+There have been multiple attempts to help integrate Apache DataSketches
+into Apache Spark, including one built into Spark itself as of v3.5.
+All are useful work, but in comparing them, there are various limitations
+to each library. Whether limiting the type of sketches available
+(e.g. native Spark provides only HLL) or limiting flexibility and
+functionality (e.g. forcing HLL and Theta to use a common interface which
+precludes set operations HLL cannot support, or using global parameters
+to control the sizes of all sketch instances in the query), the other
+libraries place undesirable constraints on developers looking to use
+sketches in their queries or data systems. This library aims to restore
+that choice to develoeprs.
+
+## Build and Test Instructions
+
+Building the library requires `sbt`, a commonly used build
+system for Scala projects. There are several environment variables
+that can be used to configure the project:
+
+* Java version, typically via `$JAVA_HOME`: Default is 11
+* `$SCALA_VERSION`: Default is 2.12.20
+* `$SPARK_VERSION`: Default is 3.5.4
+
+The package is built using `sbt package` and tests are
+run with `sbt test`.
+
+If building for the pyspark package, we currently recommend using
+Java 11, even if the library will be used with later Java versions.

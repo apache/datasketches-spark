@@ -1,4 +1,4 @@
-name: Continuous Integration
+name: Python CI
 
 on:
   push:
@@ -10,9 +10,6 @@ on:
     branches: [ 'main', '[0-9]+.[0-9]+.[Xx]' ]
   workflow_dispatch:
 
-#env:
-#  MAVEN_OPTS: -Xmx4g -Xms1g
-
 jobs:
   build:
     name: JDK ${{ matrix.jdk }} - Scala ${{ matrix.scala }} - Spark ${{ matrix.spark }}
@@ -20,10 +17,11 @@ jobs:
 
     strategy:
       fail-fast: false
+      # using fixed versions for CI; can expand if building wheels for pypi
       matrix:
-        jdk: [ 8, 11, 17 ]
-        scala: [ 2.12.20, 2.13.16 ]
-        spark: [ 3.4.4, 3.5.4 ]
+        jdk: [ 11 ]
+        scala: [ 2.12.20 ]
+        spark: [ 3.5.4 ]
 
     env:
       JDK_VERSION: ${{ matrix.jdk }}
@@ -63,14 +61,21 @@ jobs:
           echo Scala version: $SCALA_VERSION
           echo Spark version: $SPARK_VERSION
 
-      - name: Build and test
+      - name: Build Scala package
         run: >
-          sbt ++$SCALA_VEERSION --batch clean test
+          sbt ++$SCALA_VEERSION --batch clean package
 
-# Architecture options: x86, x64, armv7, aarch64, ppc64le
-# setup-java@v4 has a "with cache" option
-# Lifecycle: validate, compile, test, package, verify, install, deploy
-# -B batch mode, never stops for user input
-# -V show Version without stopping
-# -X debug mode
-# -q quiet, only show errors
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install tox
+
+      - name: Run Python tests
+        run: |
+          cd python
+          python -m tox

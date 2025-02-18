@@ -22,3 +22,34 @@
 This repo is still an early-stage work in progress.
 
 This is the PySpark plugin component.
+
+## Usage
+
+There are several Spark config options needed to use the library.
+`tests/conftest.py` provides a basic example. The key settings to
+note are:
+
+* `.config("spark.driver.userClassPathFirst", "true")`
+* `.config("spark.executor.userClassPathFirst", "true")`
+* `.config("spark.driver.extraClassPath", get_dependency_classpath())`
+* `.config("spark.executor.extraClassPath", get_dependency_classpath())`
+
+Starting with Spark 3.5, the Spark includes an older version of the DataSketches java library, so Spark needs to know to use the
+provided verison.
+
+Initial testing with Java 17 indicates that there may be
+additional configuration options needed to enable the
+use of MemorySegment. For now we suggest using a base library
+compiled for Java 11 with pyspark.
+
+## Build and Test Instructions
+
+This component requires that the Scala library is already built.
+The build process will check for the availability of the relevant
+jars and fail if they do not exist. It will also update the jars
+in the event the current python module's copies are older.
+
+The easiest way to build the library is with the `build` package:
+`python -m build --wheel`. The resulting wheel can then be installed with `python -m pip install dist/datasketches_spark_<version-info>.whl`
+
+Tests are run with `pytest` or `tox`.

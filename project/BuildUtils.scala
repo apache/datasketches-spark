@@ -40,7 +40,7 @@ val pythonVersionFileName = "python/src/datasketches_spark/version.txt"
 def readVersionAndCopyToPython(filename: String): String = {
   val bufferedSource = Source.fromFile(filename)
   val version = try {
-    bufferedSource.getLines.find(line => !line.trim.startsWith("#") && !line.trim.isBlank()).get
+    bufferedSource.getLines.find(line => !line.trim.startsWith("#") && !line.trim.isEmpty()).get
   } finally {
     bufferedSource.close()
   }

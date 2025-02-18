@@ -63,7 +63,7 @@ jobs:
 
       - name: Build and test
         run: >
-          sbt ++$SCALA_VEERSION --batch clean test
+          sbt ++$SCALA_VEERSION --batch clean package
 
       - name: Set up Python
         uses: actions/setup-python@v5

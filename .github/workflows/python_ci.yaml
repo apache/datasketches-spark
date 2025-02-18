@@ -61,7 +61,7 @@ jobs:
           echo Scala version: $SCALA_VERSION
           echo Spark version: $SPARK_VERSION
 
-      - name: Build and test
+      - name: Build Scala package
         run: >
           sbt ++$SCALA_VEERSION --batch clean package
 

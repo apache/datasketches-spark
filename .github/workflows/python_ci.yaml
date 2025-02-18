@@ -1,4 +1,4 @@
-name: Continuous Integration
+name: Python CI
 
 on:
   push:
@@ -9,9 +9,6 @@ on:
     # The branches below must be a subset of the branches above
     branches: [ 'main', '[0-9]+.[0-9]+.[Xx]' ]
   workflow_dispatch:
-
-#env:
-#  MAVEN_OPTS: -Xmx4g -Xms1g
 
 jobs:
   build:
@@ -68,10 +65,17 @@ jobs:
         run: >
           sbt ++$SCALA_VEERSION --batch clean test
 
-# Architecture options: x86, x64, armv7, aarch64, ppc64le
-# setup-java@v4 has a "with cache" option
-# Lifecycle: validate, compile, test, package, verify, install, deploy
-# -B batch mode, never stops for user input
-# -V show Version without stopping
-# -X debug mode
-# -q quiet, only show errors
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Python dependencies
+        run: >
+          python -m pip install --upgrade pip;
+          python -m pip install tox
+
+      - name: Run Python tests
+        run: >
+          cd python;
+          python -m tox

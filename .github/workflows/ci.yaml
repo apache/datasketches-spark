@@ -67,17 +67,10 @@ jobs:
         run: >
           sbt ++$SCALA_VEERSION --batch clean package
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
-      - name: Install Python dependencies
-        run: >
-          python -m pip install --upgrade pip
-          python -m pip install tox
-
-      - name: Run Python tests
-        run: >
-          cd python
-          python -m tox
+# Architecture options: x86, x64, armv7, aarch64, ppc64le
+# setup-java@v4 has a "with cache" option
+# Lifecycle: validate, compile, test, package, verify, install, deploy
+# -B batch mode, never stops for user input
+# -V show Version without stopping
+# -X debug mode
+# -q quiet, only show errors

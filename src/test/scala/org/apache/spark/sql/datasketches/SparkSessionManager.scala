@@ -34,6 +34,8 @@ trait SparkSessionManager extends AnyFunSuite with BeforeAndAfterAll {
       .builder()
       .appName("datasketches-spark-tests")
       .master("local[3]")
+      .config("spark.driver.bindAddress", "localhost")
+      .config("spark.driver.host", "localhost")
       //.config("spark.sql.debug.codegen", "true")
       .getOrCreate()
 

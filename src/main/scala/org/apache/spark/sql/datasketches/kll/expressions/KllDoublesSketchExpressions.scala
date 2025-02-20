@@ -285,18 +285,22 @@ case class KllDoublesSketchGetPmfCdf(sketchExpr: Expression,
 
   override protected def nullSafeCodeGen(ctx: CodegenContext, ev: ExprCode, f: (String, String, String) => String): ExprCode = {
     val sketchEval = sketchExpr.genCode(ctx)
-    val sketch = ctx.freshName("sketch")
     val splitPointsEval = splitPointsExpr.genCode(ctx)
+    val sketch = ctx.freshName("sketch")
+    val searchCriterion = ctx.freshName("searchCriterion")
+    val splitPoints = ctx.freshName("splitPoints")
+    val result = ctx.freshName("result")
+
     val code =
       s"""
          |${sketchEval.code}
          |${splitPointsEval.code}
-         |org.apache.datasketches.quantilescommon.QuantileSearchCriteria searchCriteria = ${if (isInclusive) "org.apache.datasketches.quantilescommon.QuantileSearchCriteria.INCLUSIVE" else "org.apache.datasketches.quantilescommon.QuantileSearchCriteria.EXCLUSIVE"};
+         |org.apache.datasketches.quantilescommon.QuantileSearchCriteria $searchCriterion = ${if (isInclusive) "org.apache.datasketches.quantilescommon.QuantileSearchCriteria.INCLUSIVE" else "org.apache.datasketches.quantilescommon.QuantileSearchCriteria.EXCLUSIVE"};
          |final org.apache.datasketches.kll.KllDoublesSketch $sketch = org.apache.spark.sql.datasketches.kll.types.KllDoublesSketchType.wrap(${sketchEval.value});
-         |final double[] splitPoints = ((org.apache.spark.sql.catalyst.util.GenericArrayData)${splitPointsEval.value}).toDoubleArray();
-         |final double[] result = ${if (isPmf) s"$sketch.getPMF(splitPoints, searchCriteria)" else s"$sketch.getCDF(splitPoints, searchCriteria)"};
+         |final double[] $splitPoints = ((org.apache.spark.sql.catalyst.util.GenericArrayData)${splitPointsEval.value}).toDoubleArray();
+         |final double[] $result = ${if (isPmf) s"$sketch.getPMF($splitPoints, $searchCriterion)" else s"$sketch.getCDF($splitPoints, $searchCriterion)"};
          |final boolean ${ev.isNull} = false;
-         |org.apache.spark.sql.catalyst.util.GenericArrayData ${ev.value} = new org.apache.spark.sql.catalyst.util.GenericArrayData(result);
+         |org.apache.spark.sql.catalyst.util.GenericArrayData ${ev.value} = new org.apache.spark.sql.catalyst.util.GenericArrayData($result);
        """.stripMargin
     ev.copy(code = CodeBlock(Seq(code), Seq.empty))
   }

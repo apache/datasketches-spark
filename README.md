@@ -46,5 +46,5 @@ that can be used to configure the project:
 The package is built using `sbt package` and tests are
 run with `sbt test`.
 
-If building for the pyspark package, we currently recommend using
-Java 11, even if the library will be used with later Java versions.
+If building for the pyspark package, please also read
+[python/README.md](python/README.md).

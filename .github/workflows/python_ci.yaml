@@ -19,7 +19,7 @@ jobs:
       fail-fast: false
       # using fixed versions for CI; can expand if building wheels for pypi
       matrix:
-        jdk: [ 11 ]
+        jdk: [ 11, 17 ]
         scala: [ 2.12.20 ]
         spark: [ 3.5.4 ]
 

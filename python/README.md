@@ -26,7 +26,7 @@ This is the PySpark plugin component.
 ## Usage
 
 There are several Spark config options needed to use the library.
-`tests/conftest.py` provides a basic example. The key settings to
+[tests/conftest.py](tests/conftest.py) provides a basic example. The key settings to
 note are:
 
 * `.config("spark.driver.userClassPathFirst", "true")`
@@ -34,13 +34,15 @@ note are:
 * `.config("spark.driver.extraClassPath", get_dependency_classpath())`
 * `.config("spark.executor.extraClassPath", get_dependency_classpath())`
 
-Starting with Spark 3.5, the Spark includes an older version of the DataSketches java library, so Spark needs to know to use the
-provided verison.
+Starting with Spark 3.5, Spark includes an older version of the DataSketches java library, so Spark needs to know to use the provided verison.
 
-Initial testing with Java 17 indicates that there may be
-additional configuration options needed to enable the
-use of MemorySegment. For now we suggest using a base library
-compiled for Java 11 with pyspark.
+When using a datasketches-spark library compiled for Java 17 or newer, there are additional configuration options needed. Specifically, you must enable the `jdk.incubator.foreign` module in both the Spark driver and executors. Especially for the driver, this must be specified prior to creating the JVM; the module cannot be added once the JVM is initialized.
+
+Looking again at [tests/conftest.py](tests/conftest.py), we need to add
+
+* `.config('spark.executor.extraJavaOptions', java_opts)`
+
+with `java_opts` set to `--add-modules=jdk.incubator.foreign --add-exports=java.base/sun.nio.ch=ALL-UNNAMED'`. We must also use that value to specify `--driver-java-options ${java_opts}`. That option may be specified either via the `PYSPARK_SUBMIT_ARGS` environment variable if running a python script directly, or as a command-line argument to `spark-submit` if submitting to a cluster.
 
 ## Build and Test Instructions
 

@@ -26,6 +26,22 @@ import org.apache.spark.sql.datasketches.theta.expressions.ThetaSketchGetEstimat
 import org.apache.spark.sql.datasketches.common.DatasketchesScalaFunctionBase
 
 object functions extends DatasketchesScalaFunctionBase {
+  def theta_sketch_agg_build(column: Column, lgk: Int, seed: Long, p: Float): Column = withAggregateFunction {
+    new ThetaSketchAggBuild(column.expr, lgk, seed, p)
+  }
+
+  def theta_sketch_agg_build(columnName: String, lgk: Int, seed: Long, p: Float): Column = {
+    theta_sketch_agg_build(Column(columnName), lgk, seed, p)
+  }
+
+  def theta_sketch_agg_build(column: Column, lgk: Int, seed: Long): Column = withAggregateFunction {
+    new ThetaSketchAggBuild(column.expr, lgk, seed)
+  }
+
+  def theta_sketch_agg_build(columnName: String, lgk: Int, seed: Long): Column = {
+    theta_sketch_agg_build(Column(columnName), lgk, seed)
+  }
+
   def theta_sketch_agg_build(column: Column, lgk: Int): Column = withAggregateFunction {
     new ThetaSketchAggBuild(column.expr, lgk)
   }

@@ -17,21 +17,19 @@
 
 package org.apache.spark.sql.datasketches.theta.aggregate
 
-import org.apache.datasketches.theta.{UpdateSketch, SetOperation}
-import org.apache.spark.sql.datasketches.theta.types.{ThetaSketchType, ThetaSketchWrapper}
-
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.{ExpectsInputTypes, Expression, ExpressionDescription, Literal}
 import org.apache.spark.sql.catalyst.expressions.aggregate.TypedImperativeAggregate
 import org.apache.spark.sql.catalyst.trees.QuaternaryLike
-import org.apache.spark.sql.types.{AbstractDataType, DataType, IntegerType, LongType, NumericType, FloatType, DoubleType}
+import org.apache.spark.sql.types.{AbstractDataType, DataType, IntegerType, LongType, NumericType, FloatType, DoubleType, StringType, TypeCollection}
+import org.apache.spark.unsafe.types.UTF8String
 
-import org.apache.datasketches.thetacommon.ThetaUtil.DEFAULT_UPDATE_SEED
+import org.apache.spark.sql.datasketches.theta.ThetaSketchConstants.DEFAULT_LG_K
+import org.apache.spark.sql.datasketches.theta.types.{ThetaSketchType, ThetaSketchWrapper}
+
 import org.apache.datasketches.common.ResizeFactor
-
-object ThetaSketchConstants {
-  final val DEFAULT_LG_K: Int = 12
-}
+import org.apache.datasketches.theta.{UpdateSketch, SetOperation}
+import org.apache.datasketches.thetacommon.ThetaUtil.DEFAULT_UPDATE_SEED
 
 /**
  * The ThetaSketchBuild function creates a Theta sketch from a column of values
@@ -39,17 +37,21 @@ object ThetaSketchConstants {
  *
  * See [[https://datasketches.apache.org/docs/Theta/ThetaSketches.html]] for more information.
  *
- * @param child child expression, from which to build a sketch
- * @param lgk the size-accraucy trade-off parameter for the sketch
+ * @param input expression, from which to build a sketch
+ * @param lgK size-accraucy trade-off parameter for the sketch
+ * @param seed update seed for the sketch
+ * @param p initial sampling probability for the sketch
  */
 // scalastyle:off line.size.limit
 @ExpressionDescription(
   usage = """
-    _FUNC_(expr, lgk) - Creates a Theta Sketch and returns the binary representation.
-      `lgk` (optional, default: 12) the size-accuracy trade-off parameter.""",
+    _FUNC_(expr, lgK, seed, p) - Creates a Theta Sketch and returns the binary representation.
+      `lgK` (optional, default: 12) size-accuracy trade-off parameter.
+      `seed` (optional, default: 9001) update seed for the sketch.
+      `p` (optional, default: 1) initial sampling probability for the sketch.""",
   examples = """
     Example:
-      > SELECT theta_sketch_get_estimate(_FUNC_(col, 12)) FROM VALUES (1), (2), (3), (4), (5) tab(col);
+      > SELECT theta_sketch_get_estimate(_FUNC_(col)) FROM VALUES (1), (2), (3), (4), (5) tab(col);
        5.0
   """,
 )
@@ -67,7 +69,7 @@ case class ThetaSketchAggBuild(
 
   lazy val lgK: Int = {
     lgKExpr.eval() match {
-      case null => ThetaSketchConstants.DEFAULT_LG_K
+      case null => DEFAULT_LG_K
       case lgK: Int => lgK
       case _ => throw new IllegalArgumentException(
         s"Unsupported input type ${lgKExpr.dataType.catalogString}")
@@ -99,7 +101,7 @@ case class ThetaSketchAggBuild(
   def this(inputExpr: Expression, lgKExpr: Expression, seedExpr: Expression, pExpr: Expression) = this(inputExpr, lgKExpr, seedExpr, pExpr, 0, 0)
   def this(inputExpr: Expression, lgKExpr: Expression, seedExpr: Expression) = this(inputExpr, lgKExpr, seedExpr, Literal(1f))
   def this(inputExpr: Expression, lgKExpr: Expression) = this(inputExpr, lgKExpr, Literal(DEFAULT_UPDATE_SEED))
-  def this(inputExpr: Expression) = this(inputExpr, Literal(ThetaSketchConstants.DEFAULT_LG_K))
+  def this(inputExpr: Expression) = this(inputExpr, Literal(DEFAULT_LG_K))
 
   def this(inputExpr: Expression, lgK: Int) = this(inputExpr, Literal(lgK))
   def this(inputExpr: Expression, lgK: Int, seed: Long) = this(inputExpr, Literal(lgK), Literal(seed))
@@ -115,13 +117,13 @@ case class ThetaSketchAggBuild(
     copy(inputExpr = newFirst, lgKExpr = newSecond, seedExpr = newThird, pExpr = newFourth)
   }
 
-  override def prettyName: String = "theta_sketch_build"
+  override def prettyName: String = "theta_sketch_agg_build"
 
   override def dataType: DataType = ThetaSketchType
 
   override def nullable: Boolean = false
 
-  override def inputTypes: Seq[AbstractDataType] = Seq(NumericType, IntegerType, LongType, FloatType, DoubleType)
+  override def inputTypes: Seq[AbstractDataType] = Seq(TypeCollection(NumericType, StringType), IntegerType, LongType, FloatType)
 
   override def createAggregationBuffer(): ThetaSketchWrapper = new ThetaSketchWrapper(updateSketch
     = Some(UpdateSketch.builder().setLogNominalEntries(lgK).setSeed(seed).setP(p).build()))
@@ -134,6 +136,7 @@ case class ThetaSketchAggBuild(
         case FloatType => wrapper.updateSketch.get.update(value.asInstanceOf[Float])
         case IntegerType => wrapper.updateSketch.get.update(value.asInstanceOf[Int])
         case LongType => wrapper.updateSketch.get.update(value.asInstanceOf[Long])
+        case StringType => wrapper.updateSketch.get.update(value.asInstanceOf[UTF8String].toString)
         case _ => throw new IllegalArgumentException(
           s"Unsupported input type ${inputExpr.dataType.catalogString}")
       }

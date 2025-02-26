@@ -121,7 +121,7 @@ case class ThetaSketchToString(child: Expression)
     val code = s"""
       ${childEval.code}
       final org.apache.datasketches.theta.Sketch $sketch = org.apache.spark.sql.types.ThetaSketchWrapper.wrapAsReadOnlySketch(${childEval.value});
-      final double ${ev.value} = $sketch.toString());
+      final String ${ev.value} = $sketch.toString());
     """
     ev.copy(code = CodeBlock(Seq(code), Seq.empty), isNull = childEval.isNull)
   }

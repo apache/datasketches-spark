@@ -22,10 +22,12 @@ import org.apache.spark.sql.datasketches.common.SparkSessionManager
 import org.apache.spark.sql.datasketches.theta.functions._
 import org.apache.spark.sql.datasketches.theta.ThetaFunctionRegistry
 
+import org.scalatest.matchers.should.Matchers._
+
 class ThetaTest extends SparkSessionManager {
   import spark.implicits._
 
-  test("Theta Sketch build via Scala") {
+  test("Theta Sketch build via Scala with defaults") {
     val n = 100
     val data = (for (i <- 1 to n) yield i).toDF("value")
 
@@ -35,7 +37,37 @@ class ThetaTest extends SparkSessionManager {
     assert(result.getAs[Double]("estimate") == 100.0)
   }
 
-  test("Theta Sketch build via SQL default lgk") {
+  test("Theta Sketch build via Scala with lgk") {
+    val n = 100
+    val data = (for (i <- 1 to n) yield i).toDF("value")
+
+    val sketchDf = data.agg(theta_sketch_agg_build("value", 14).as("sketch"))
+    val result: Row = sketchDf.select(theta_sketch_get_estimate("sketch").as("estimate")).head()
+
+    assert(result.getAs[Double]("estimate") == 100.0)
+  }
+
+  test("Theta Sketch build via Scala with lgk and seed") {
+    val n = 100
+    val data = (for (i <- 1 to n) yield i).toDF("value")
+
+    val sketchDf = data.agg(theta_sketch_agg_build("value", 14, 111).as("sketch"))
+    val result: Row = sketchDf.select(theta_sketch_get_estimate("sketch").as("estimate")).head()
+
+    assert(result.getAs[Double]("estimate") == 100.0)
+  }
+
+  test("Theta Sketch build via Scala with lgk, seed and p") {
+    val n = 100
+    val data = (for (i <- 1 to n) yield i).toDF("value")
+
+    val sketchDf = data.agg(theta_sketch_agg_build("value", 14, 111, 0.99f).as("sketch"))
+    val result: Row = sketchDf.select(theta_sketch_get_estimate("sketch").as("estimate")).head()
+
+    result.getAs[Double]("estimate") shouldBe (100.0 +- 2.0)
+  }
+
+  test("Theta Sketch build via SQL with defaults") {
     ThetaFunctionRegistry.registerFunctions(spark)
 
     val n = 100
@@ -67,7 +99,39 @@ class ThetaTest extends SparkSessionManager {
     assert(df.head().getAs[Double]("estimate") == 100.0)
   }
 
-  test("Theta Union via Scala") {
+  test("Theta Sketch build from strings via SQL with lgk and seed") {
+    ThetaFunctionRegistry.registerFunctions(spark)
+
+    val n = 100
+    val data = (for (i <- 1 to n) yield i.toString()).toDF("str")
+    data.createOrReplaceTempView("theta_input_table")
+
+    val df = spark.sql(s"""
+      SELECT
+        theta_sketch_get_estimate(theta_sketch_agg_build(str, 14, 111L)) AS estimate
+      FROM
+        theta_input_table
+    """)
+    assert(df.head().getAs[Double]("estimate") == 100.0)
+  }
+
+  test("Theta Sketch build via SQL with lgk, seed and p") {
+    ThetaFunctionRegistry.registerFunctions(spark)
+
+    val n = 100
+    val data = (for (i <- 1 to n) yield i).toDF("value")
+    data.createOrReplaceTempView("theta_input_table")
+
+    val df = spark.sql(s"""
+      SELECT
+        theta_sketch_get_estimate(theta_sketch_agg_build(value, 14, 111L, 0.99f)) AS estimate
+      FROM
+        theta_input_table
+    """)
+    df.head().getAs[Double]("estimate") shouldBe (100.0 +- 2.0)
+  }
+
+  test("Theta Union via Scala with defauls") {
     val numGroups = 10
     val numDistinct = 2000
     val data = (for (i <- 1 to numDistinct) yield (i % numGroups, i)).toDF("group", "value")
@@ -78,8 +142,34 @@ class ThetaTest extends SparkSessionManager {
     assert(result.getAs[Double]("estimate") == numDistinct)
   }
 
+  test("Theta Union via Scala with lgk") {
+    val numGroups = 10
+    val numDistinct = 2000
+    val data = (for (i <- 1 to numDistinct) yield (i % numGroups, i)).toDF("group", "value")
 
-  test("Theta Union via SQL default lgk") {
+    val groupedDf = data.groupBy("group").agg(theta_sketch_agg_build("value", 14).as("sketch"))
+    val mergedDf = groupedDf.agg(theta_sketch_agg_union("sketch", 14).as("merged"))
+    val result: Row = mergedDf.select(theta_sketch_get_estimate("merged").as("estimate")).head()
+    assert(result.getAs[Double]("estimate") == numDistinct)
+  }
+
+  test("Theta Union via Scala with lgk and seed") {
+    val numGroups = 10
+    val numDistinct = 2000
+    val data = (for (i <- 1 to numDistinct) yield (i % numGroups, i)).toDF("group", "value")
+
+    val groupedDf = data.groupBy("group").agg(theta_sketch_agg_build("value", 14, 111).as("sketch"))
+    val mergedDf = groupedDf.agg(theta_sketch_agg_union("sketch", 14, 111).as("merged"))
+    val result: Row = mergedDf.select(theta_sketch_get_estimate("merged").as("estimate")).head()
+    assert(result.getAs[Double]("estimate") == numDistinct)
+
+    val toStr: Row = mergedDf.select(theta_sketch_to_string("merged").as("summary")).head()
+    toStr.getAs[String]("summary") should startWith ("\n### HeapCompactSketch")
+  }
+
+  test("Theta Union via SQL with defaults") {
+    ThetaFunctionRegistry.registerFunctions(spark)
+
     val numGroups = 10
     val numDistinct = 2000
     val data = (for (i <- 1 to numDistinct) yield (i % numGroups, i)).toDF("group", "value")
@@ -106,6 +196,8 @@ class ThetaTest extends SparkSessionManager {
   }
 
   test("Theta Union via SQL with lgk") {
+    ThetaFunctionRegistry.registerFunctions(spark)
+
     val numGroups = 10
     val numDistinct = 2000
     val data = (for (i <- 1 to numDistinct) yield (i % numGroups, i)).toDF("group", "value")
@@ -131,4 +223,31 @@ class ThetaTest extends SparkSessionManager {
     assert(mergedDf.head().getAs[Double]("estimate") == numDistinct)
   }
 
+  test("Theta Union via SQL with lgk and seed") {
+    ThetaFunctionRegistry.registerFunctions(spark)
+
+    val numGroups = 10
+    val numDistinct = 2000
+    val data = (for (i <- 1 to numDistinct) yield (i % numGroups, i)).toDF("group", "value")
+    data.createOrReplaceTempView("theta_input_table")
+
+    val groupedDf = spark.sql(s"""
+      SELECT
+        group,
+        theta_sketch_agg_build(value, 14, 111L) AS sketch
+      FROM
+        theta_input_table
+      GROUP BY
+        group
+    """)
+    groupedDf.createOrReplaceTempView("theta_sketch_table")
+
+    val mergedDf = spark.sql(s"""
+      SELECT
+        theta_sketch_get_estimate(theta_sketch_agg_union(sketch, 14, 111L)) AS estimate
+      FROM
+        theta_sketch_table
+    """)
+    assert(mergedDf.head().getAs[Double]("estimate") == numDistinct)
+  }
 }

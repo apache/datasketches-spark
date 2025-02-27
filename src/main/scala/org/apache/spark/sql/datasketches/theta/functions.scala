@@ -22,10 +22,26 @@ import org.apache.spark.sql.functions.lit
 
 import org.apache.spark.sql.datasketches.common.DatasketchesScalaFunctionBase
 import org.apache.spark.sql.datasketches.theta.aggregate.{ThetaSketchAggBuild, ThetaSketchAggUnion}
-import org.apache.spark.sql.datasketches.theta.expressions.ThetaSketchGetEstimate
+import org.apache.spark.sql.datasketches.theta.expressions.{ThetaSketchGetEstimate, ThetaSketchToString}
 import org.apache.spark.sql.datasketches.common.DatasketchesScalaFunctionBase
 
 object functions extends DatasketchesScalaFunctionBase {
+  def theta_sketch_agg_build(column: Column, lgk: Int, seed: Long, p: Float): Column = withAggregateFunction {
+    new ThetaSketchAggBuild(column.expr, lgk, seed, p)
+  }
+
+  def theta_sketch_agg_build(columnName: String, lgk: Int, seed: Long, p: Float): Column = {
+    theta_sketch_agg_build(Column(columnName), lgk, seed, p)
+  }
+
+  def theta_sketch_agg_build(column: Column, lgk: Int, seed: Long): Column = withAggregateFunction {
+    new ThetaSketchAggBuild(column.expr, lgk, seed)
+  }
+
+  def theta_sketch_agg_build(columnName: String, lgk: Int, seed: Long): Column = {
+    theta_sketch_agg_build(Column(columnName), lgk, seed)
+  }
+
   def theta_sketch_agg_build(column: Column, lgk: Int): Column = withAggregateFunction {
     new ThetaSketchAggBuild(column.expr, lgk)
   }
@@ -42,20 +58,28 @@ object functions extends DatasketchesScalaFunctionBase {
     theta_sketch_agg_build(Column(columnName))
   }
 
-  def theta_sketch_agg_union(column: Column, lgk: Int): Column = withAggregateFunction {
-    new ThetaSketchAggUnion(column.expr, lit(lgk).expr)
+  def theta_sketch_agg_union(column: Column, lgk: Int, seed: Long): Column = withAggregateFunction {
+    new ThetaSketchAggUnion(column.expr, lgk, seed)
   }
 
-  def theta_sketch_agg_union(columnName: String, lgk: Int): Column = withAggregateFunction {
-    new ThetaSketchAggUnion(Column(columnName).expr, lit(lgk).expr)
+  def theta_sketch_agg_union(columnName: String, lgk: Int, seed: Long): Column = {
+    theta_sketch_agg_union(Column(columnName), lgk, seed)
+  }
+
+  def theta_sketch_agg_union(column: Column, lgk: Int): Column = withAggregateFunction {
+    new ThetaSketchAggUnion(column.expr, lgk)
+  }
+
+  def theta_sketch_agg_union(columnName: String, lgk: Int): Column = {
+    theta_sketch_agg_union(Column(columnName), lgk)
   }
 
   def theta_sketch_agg_union(column: Column): Column = withAggregateFunction {
     new ThetaSketchAggUnion(column.expr)
   }
 
-  def theta_sketch_agg_union(columnName: String): Column = withAggregateFunction {
-    new ThetaSketchAggUnion(Column(columnName).expr)
+  def theta_sketch_agg_union(columnName: String): Column = {
+    theta_sketch_agg_union(Column(columnName))
   }
 
   def theta_sketch_get_estimate(column: Column): Column = withExpr {
@@ -64,5 +88,13 @@ object functions extends DatasketchesScalaFunctionBase {
 
   def theta_sketch_get_estimate(columnName: String): Column = {
     theta_sketch_get_estimate(Column(columnName))
+  }
+
+  def theta_sketch_to_string(column: Column): Column = withExpr {
+    new ThetaSketchToString(column.expr)
+  }
+
+  def theta_sketch_to_string(columnName: String): Column = {
+    theta_sketch_to_string(Column(columnName))
   }
 }

@@ -63,7 +63,7 @@ case class ThetaSketchGetEstimate(child: Expression)
     val sketch = ctx.freshName("sketch")
     val code = s"""
       ${childEval.code}
-      final org.apache.datasketches.theta.Sketch $sketch = org.apache.spark.sql.types.ThetaSketchWrapper.wrapAsReadOnlySketch(${childEval.value});
+      final org.apache.datasketches.theta.Sketch $sketch = org.apache.spark.sql.datasketches.theta.types.ThetaSketchWrapper.wrapAsReadOnlySketch(${childEval.value});
       final double ${ev.value} = $sketch.getEstimate();
     """
     ev.copy(code = CodeBlock(Seq(code), Seq.empty), isNull = childEval.isNull)
@@ -81,7 +81,7 @@ case class ThetaSketchGetEstimate(child: Expression)
   examples = """
     Example:
       > SELECT _FUNC_(theta_sketch_agg_build(col)) FROM VALUES (1), (2), (3) tab(col);
-      ### HeapCompactSketch SUMMARY: 
+      ### HeapCompactSketch SUMMARY:
          Estimate                : 3.0
          Upper Bound, 95% conf   : 3.0
          Lower Bound, 95% conf   : 3.0
@@ -120,8 +120,8 @@ case class ThetaSketchToString(child: Expression)
     val sketch = ctx.freshName("sketch")
     val code = s"""
       ${childEval.code}
-      final org.apache.datasketches.theta.Sketch $sketch = org.apache.spark.sql.types.ThetaSketchWrapper.wrapAsReadOnlySketch(${childEval.value});
-      final String ${ev.value} = $sketch.toString());
+      final org.apache.datasketches.theta.Sketch $sketch = org.apache.spark.sql.datasketches.theta.types.ThetaSketchWrapper.wrapAsReadOnlySketch(${childEval.value});
+      final org.apache.spark.unsafe.types.UTF8String ${ev.value} = org.apache.spark.unsafe.types.UTF8String.fromString($sketch.toString());
     """
     ev.copy(code = CodeBlock(Seq(code), Seq.empty), isNull = childEval.isNull)
   }

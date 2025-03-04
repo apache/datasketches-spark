@@ -19,6 +19,8 @@
 
 set -ex
 
+export GCS_BUCKET=MY_BUCKET_NAME
+
 export DSPY_PACKAGE=datasketches-5.2.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
 export DSSPARK_PACKAGE=datasketches_spark-0.1.0.dev0-py3-none-any.whl
 
@@ -30,8 +32,8 @@ export JAR_PATH=/opt/datasketches_jars
 #os.environ['PYSPARK_SUBMIT_ARGS'] = f"--driver-java-options '{java_opts}' pyspark-shell"
 
 # download wheels from GCS buckets
-gsutil cp gs://jmalkin_ds_spark/${DSPY_PACKAGE} /tmp/
-gsutil cp gs://jmalkin_ds_spark/${DSSPARK_PACKAGE} /tmp/
+gsutil cp gs://${GCS_BUCKET}/${DSPY_PACKAGE} /tmp/
+gsutil cp gs://${GCS_BUCKET}/${DSSPARK_PACKAGE} /tmp/
 
 # install wheels
 python -m pip install /tmp/${DSPY_PACKAGE}

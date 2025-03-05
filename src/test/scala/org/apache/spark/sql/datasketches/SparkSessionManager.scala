@@ -30,16 +30,31 @@ import org.apache.spark.sql.SparkSession
 trait SparkSessionManager extends AnyFunSuite with BeforeAndAfterAll {
   Logger.getRootLogger().setLevel(Level.OFF)
 
-  lazy val spark: SparkSession = SparkSession
-      .builder()
-      .appName("datasketches-spark-tests")
-      .master("local[3]")
+  lazy val spark: SparkSession = {
+    // environment variable to force codegen for testing
+    // FORCE_CODEGEN means allow only codegen
+    // no argument means to use Spark's default (try codegen, fall back on error)
+    val forceCodegen = sys.env.getOrElse("FORCE_CODEGEN", "false").toBoolean
+
+    val builder = SparkSession.builder()
+    builder
+      .appName(s"datasketches-spark-tests")
+      .master("local[1]")
       .config("spark.driver.bindAddress", "localhost")
       .config("spark.driver.host", "localhost")
-      //.config("spark.sql.debug.codegen", "true")
-      .getOrCreate()
+
+    if (forceCodegen) {
+      builder
+        .config("spark.sql.codegen.wholeStage", "true")
+        .config("spark.sql.codegen.fallback", "false")
+    }
+
+    Logger.getRootLogger().info(s"Spark session started with codegen: $forceCodegen")
+    builder.getOrCreate()
+  }
 
   override def beforeAll(): Unit = {
+    super.beforeAll()
     spark.sparkContext.setLogLevel("OFF")
   }
 }

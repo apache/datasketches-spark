@@ -24,7 +24,12 @@ import org.apache.spark.sql.types.{ArrayType, BooleanType, DoubleType}
 
 import org.apache.spark.sql.datasketches.common.DatasketchesScalaFunctionBase
 import org.apache.spark.sql.datasketches.kll.aggregate.{KllDoublesSketchAggMerge, KllDoublesSketchAggBuild}
-import org.apache.spark.sql.datasketches.kll.expressions.{KllDoublesSketchGetMin, KllDoublesSketchGetMax, KllDoublesSketchGetPmfCdf}
+import org.apache.spark.sql.datasketches.kll.expressions.{KllDoublesSketchGetMin,
+                                                          KllDoublesSketchGetMax,
+                                                          KllDoublesSketchGetPmfCdf,
+                                                          KllDoublesSketchGetNumRetained,
+                                                          KllDoublesSketchGetK,
+                                                          KllDoublesSketchIsEstimationMode}
 
 object functions extends DatasketchesScalaFunctionBase {
 
@@ -68,6 +73,33 @@ object functions extends DatasketchesScalaFunctionBase {
 
   def kll_sketch_double_agg_merge(columnName: String, k: Int): Column = {
     kll_sketch_double_agg_merge(Column(columnName), lit(k))
+  }
+
+  // get k
+  def kll_sketch_double_get_k(expr: Column): Column = withExpr {
+    new KllDoublesSketchGetK(expr.expr)
+  }
+
+  def kll_sketch_double_get_k(columnName: String): Column = {
+    kll_sketch_double_get_k(Column(columnName))
+  }
+
+  // get num retained
+  def kll_sketch_double_get_num_retained(expr: Column): Column = withExpr {
+    new KllDoublesSketchGetNumRetained(expr.expr)
+  }
+
+  def kll_sketch_double_get_num_retained(columnName: String): Column = {
+    kll_sketch_double_get_num_retained(Column(columnName))
+  }
+
+  // is estimation mode
+  def kll_sketch_double_is_estimation_mode(expr: Column): Column = withExpr {
+    new KllDoublesSketchIsEstimationMode(expr.expr)
+  }
+
+  def kll_sketch_double_is_estimation_mode(columnName: String): Column = {
+    kll_sketch_double_is_estimation_mode(Column(columnName))
   }
 
   // get min

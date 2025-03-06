@@ -211,7 +211,6 @@ case class KllDoublesSketchGetPmfCdf(sketchExpr: Expression,
 // getRank(quantile, QuantileSearchCriteria)
 // getRanks(quantile[]), QuantileSearchCriteria)
 // getNormalizedRankError(bool isPmf)
-// isEstimationMode()
 // toString(bool, bool) -- already part of the wrapper
 // getK() ?
 // getNumRetained() ?

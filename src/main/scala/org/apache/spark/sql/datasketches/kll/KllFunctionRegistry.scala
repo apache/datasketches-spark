@@ -21,9 +21,14 @@ import org.apache.spark.sql.catalyst.analysis.FunctionRegistry.FunctionBuilder
 import org.apache.spark.sql.catalyst.expressions.{ExpressionInfo}
 
 import org.apache.spark.sql.datasketches.common.DatasketchesFunctionRegistry
-import org.apache.spark.sql.datasketches.kll.aggregate.{KllDoublesSketchAggBuild, KllDoublesSketchAggMerge}
-import org.apache.spark.sql.datasketches.kll.expressions.{KllDoublesSketchGetMin, KllDoublesSketchGetMax, KllDoublesSketchGetPmf, KllDoublesSketchGetCdf}
-import org.apache.spark.sql.datasketches.common.DatasketchesFunctionRegistry
+import org.apache.spark.sql.datasketches.kll.aggregate.{KllDoublesSketchAggMerge, KllDoublesSketchAggBuild}
+import org.apache.spark.sql.datasketches.kll.expressions.{KllDoublesSketchGetMin,
+                                                          KllDoublesSketchGetMax,
+                                                          KllDoublesSketchGetPmf,
+                                                          KllDoublesSketchGetCdf,
+                                                          KllDoublesSketchGetNumRetained,
+                                                          KllDoublesSketchGetK,
+                                                          KllDoublesSketchIsEstimationMode}
 
 object KllFunctionRegistry extends DatasketchesFunctionRegistry {
   override val expressions: Map[String, (ExpressionInfo, FunctionBuilder)] = Map(
@@ -33,5 +38,8 @@ object KllFunctionRegistry extends DatasketchesFunctionRegistry {
     expression[KllDoublesSketchGetMax]("kll_sketch_double_get_max"),
     expression[KllDoublesSketchGetPmf]("kll_sketch_double_get_pmf"),
     expression[KllDoublesSketchGetCdf]("kll_sketch_double_get_cdf"),
+    expression[KllDoublesSketchGetK]("kll_sketch_double_get_k"),
+    expression[KllDoublesSketchGetNumRetained]("kll_sketch_double_get_num_retained"),
+    expression[KllDoublesSketchIsEstimationMode]("kll_sketch_double_is_estimation_mode"),
   )
 }

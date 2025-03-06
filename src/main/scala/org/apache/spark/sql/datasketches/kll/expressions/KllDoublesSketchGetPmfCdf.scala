@@ -24,118 +24,12 @@ import org.apache.spark.sql.datasketches.kll.types.KllDoublesSketchType
 
 import org.apache.spark.sql.types.{AbstractDataType, ArrayType, BooleanType, DataType, DoubleType}
 import org.apache.spark.sql.catalyst.expressions.{Expression, ExpressionDescription, ExpectsInputTypes, ImplicitCastInputTypes}
-import org.apache.spark.sql.catalyst.expressions.{UnaryExpression, TernaryExpression}
+import org.apache.spark.sql.catalyst.expressions.TernaryExpression
 import org.apache.spark.sql.catalyst.expressions.{Literal, NullIntolerant, RuntimeReplaceable}
 import org.apache.spark.sql.catalyst.expressions.codegen.{CodeBlock, CodegenContext, ExprCode}
 import org.apache.spark.sql.catalyst.util.GenericArrayData
 import org.apache.spark.sql.catalyst.trees.TernaryLike
 import org.apache.spark.sql.catalyst.analysis.TypeCheckResult
-
-@ExpressionDescription(
-  usage = """
-    _FUNC_(expr) - Returns the minimum value seem by the sketch given the binary representation
-    of a Datasketches KllDoublesSketch. """,
-  examples = """
-    Examples:
-      > SELECT _FUNC_(kll_sketch_agg(col)) FROM VALUES (1.0), (2.0), (3.0) tab(col);
-       1.0
-  """
-  //group = "misc_funcs",
-)
-case class KllDoublesSketchGetMin(sketchExpr: Expression)
- extends UnaryExpression
- with ExpectsInputTypes
- with NullIntolerant {
-
-  override def child: Expression = sketchExpr
-
-  override protected def withNewChildInternal(newChild: Expression): KllDoublesSketchGetMin = {
-    copy(sketchExpr = newChild)
-  }
-
-  override def prettyName: String = "kll_sketch_double_get_min"
-
-  override def inputTypes: Seq[AbstractDataType] = Seq(KllDoublesSketchType)
-
-  override def dataType: DataType = DoubleType
-
-  override def nullSafeEval(input: Any): Any = {
-    val bytes = input.asInstanceOf[Array[Byte]]
-    val sketch = KllDoublesSketch.wrap(Memory.wrap(bytes))
-    sketch.getMinItem
-  }
-
-  override protected def nullSafeCodeGen(ctx: CodegenContext, ev: ExprCode, f: String => String): ExprCode = {
-    val sketchEval = child.genCode(ctx)
-    val sketch = ctx.freshName("sketch")
-
-    val code =
-      s"""
-         |${sketchEval.code}
-         |final org.apache.datasketches.kll.KllDoublesSketch $sketch = org.apache.spark.sql.datasketches.kll.types.KllDoublesSketchType.wrap(${sketchEval.value});
-         |final double ${ev.value} = $sketch.getMinItem();
-         |final boolean ${ev.isNull} = ${sketchEval.isNull};
-       """.stripMargin
-    ev.copy(code = CodeBlock(Seq(code), Seq.empty))
-  }
-
-  override def doGenCode(ctx: CodegenContext, ev: ExprCode): ExprCode = {
-    nullSafeCodeGen(ctx, ev, c => s"($c)")
-  }
-}
-
-@ExpressionDescription(
-  usage = """
-    _FUNC_(expr) - Returns the maximum value seem by the sketch given the binary representation
-    of a Datasketches KllDoublesSketch. """,
-  examples = """
-    Examples:
-      > SELECT _FUNC_(kll_sketch_agg(col)) FROM VALUES (1.0), (2.0), (3.0) tab(col);
-       3.0
-  """
-  //group = "misc_funcs",
-)
-case class KllDoublesSketchGetMax(sketchExpr: Expression)
- extends UnaryExpression
- with ExpectsInputTypes
- with NullIntolerant {
-
-  override def child: Expression = sketchExpr
-
-  override protected def withNewChildInternal(newChild: Expression): KllDoublesSketchGetMax = {
-    copy(sketchExpr = newChild)
-  }
-
-  override def prettyName: String = "kll_sketch_double_get_max"
-
-  override def inputTypes: Seq[AbstractDataType] = Seq(KllDoublesSketchType)
-
-  override def dataType: DataType = DoubleType
-
-  override def nullSafeEval(input: Any): Any = {
-    val bytes = input.asInstanceOf[Array[Byte]]
-    val sketch = KllDoublesSketch.wrap(Memory.wrap(bytes))
-    sketch.getMaxItem
-  }
-
-  override protected def nullSafeCodeGen(ctx: CodegenContext, ev: ExprCode, f: String => String): ExprCode = {
-    val sketchEval = child.genCode(ctx)
-    val sketch = ctx.freshName("sketch")
-
-    val code =
-      s"""
-         |${sketchEval.code}
-         |final org.apache.datasketches.kll.KllDoublesSketch $sketch = org.apache.spark.sql.datasketches.kll.types.KllDoublesSketchType.wrap(${sketchEval.value});
-         |final double ${ev.value} = $sketch.getMaxItem();
-         |final boolean ${ev.isNull} = ${sketchEval.isNull};
-       """.stripMargin
-    ev.copy(code = CodeBlock(Seq(code), Seq.empty))
-  }
-
-  override def doGenCode(ctx: CodegenContext, ev: ExprCode): ExprCode = {
-    nullSafeCodeGen(ctx, ev, c => s"($c)")
-  }
-}
 
 @ExpressionDescription(
   usage = """
@@ -204,7 +98,6 @@ case class KllDoublesSketchGetCdf(sketchExpr: Expression,
         copy(sketchExpr = newFirst, splitPointsExpr = newSecond, isInclusiveExpr = newThird)
     }
 }
-
 
 /**
   * Returns the PMF and CDF of the given quantile search criteria.

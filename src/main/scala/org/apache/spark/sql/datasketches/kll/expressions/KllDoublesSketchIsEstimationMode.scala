@@ -70,7 +70,7 @@ case class KllDoublesSketchIsEstimationMode(sketchExpr: Expression)
       s"""
          |${sketchEval.code}
          |final org.apache.datasketches.kll.KllDoublesSketch $sketch = org.apache.spark.sql.datasketches.kll.types.KllDoublesSketchType.wrap(${sketchEval.value});
-         |final boolen ${ev.value} = $sketch.isEstimationMode();
+         |final boolean ${ev.value} = $sketch.isEstimationMode();
          |final boolean ${ev.isNull} = ${sketchEval.isNull};
        """.stripMargin
     ev.copy(code = CodeBlock(Seq(code), Seq.empty))

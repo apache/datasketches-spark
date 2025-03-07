@@ -29,6 +29,7 @@ import org.apache.spark.sql.datasketches.kll.expressions.{KllDoublesSketchGetMin
                                                           KllDoublesSketchGetPmfCdf,
                                                           KllDoublesSketchGetNumRetained,
                                                           KllDoublesSketchGetK,
+                                                          KllDoublesSketchToString,
                                                           KllDoublesSketchIsEstimationMode}
 
 object functions extends DatasketchesScalaFunctionBase {
@@ -100,6 +101,15 @@ object functions extends DatasketchesScalaFunctionBase {
 
   def kll_sketch_double_is_estimation_mode(columnName: String): Column = {
     kll_sketch_double_is_estimation_mode(Column(columnName))
+  }
+
+  // to_string
+  def kll_sketch_double_to_string(expr: Column): Column = withExpr {
+    new KllDoublesSketchToString(expr.expr)
+  }
+
+  def kll_sketch_double_to_string(columnName: String): Column = {
+    kll_sketch_double_to_string(Column(columnName))
   }
 
   // get min

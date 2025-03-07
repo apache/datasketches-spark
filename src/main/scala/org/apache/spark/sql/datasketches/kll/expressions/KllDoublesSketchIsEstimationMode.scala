@@ -22,7 +22,7 @@ import org.apache.spark.sql.catalyst.expressions.{Expression,
                                                   UnaryExpression,
                                                   ExpectsInputTypes,
                                                   NullIntolerant}
-import org.apache.spark.sql.types.{AbstractDataType, DataType, DoubleType}
+import org.apache.spark.sql.types.{AbstractDataType, BooleanType, DataType}
 import org.apache.spark.sql.catalyst.expressions.codegen.{CodeBlock, CodegenContext, ExprCode}
 import org.apache.spark.sql.datasketches.kll.types.KllDoublesSketchType
 import org.apache.datasketches.kll.KllDoublesSketch
@@ -54,7 +54,7 @@ case class KllDoublesSketchIsEstimationMode(sketchExpr: Expression)
 
   override def inputTypes: Seq[AbstractDataType] = Seq(KllDoublesSketchType)
 
-  override def dataType: DataType = DoubleType
+  override def dataType: DataType = BooleanType
 
   override def nullSafeEval(input: Any): Any = {
     val bytes = input.asInstanceOf[Array[Byte]]

@@ -26,6 +26,7 @@ import org.apache.datasketches.kll.KllDoublesSketch
 import org.apache.spark.sql.datasketches.kll.functions._
 import org.apache.spark.sql.datasketches.kll.types.KllDoublesSketchType
 import org.apache.spark.sql.datasketches.common.SparkSessionManager
+import org.apache.datasketches.kll.KllSketch
 
 class KllTest extends SparkSessionManager {
   import spark.implicits._
@@ -116,6 +117,19 @@ class KllTest extends SparkSessionManager {
 
     val cdf_excl = Array[Double](0.2, 0.49, 1.0, 1.0)
     compareArrays(cdf_excl, pmfCdfResult.getAs[Seq[Double]]("cdf_exclusive").toArray)
+
+    // re-use sketchDf to avoid overloading a single example with too many results
+    val sketchInfo = sketchDf.select(
+      kll_sketch_double_get_k($"sketch").as("k"),
+      kll_sketch_double_is_estimation_mode($"sketch").as("estimation_mode"),
+      kll_sketch_double_get_num_retained($"sketch").as("num_retained"),
+      kll_sketch_double_to_string($"sketch").as("description")
+    ).head()
+
+    assert(sketchInfo.getAs[Integer]("k") == KllSketch.DEFAULT_K)
+    assert(sketchInfo.getAs[Boolean]("estimation_mode") == false)
+    assert(sketchInfo.getAs[Integer]("num_retained") == n)
+    assert(sketchInfo.getAs[String]("description").trim().startsWith("### Kll"))
   }
 
   test("Kll Doubles Sketch via SQL") {
@@ -123,14 +137,15 @@ class KllTest extends SparkSessionManager {
     KllFunctionRegistry.registerFunctions(spark)
 
     val n = 100
+    val k = 200
     val data = (for (i <- 1 to n) yield i.toDouble).toDF("value")
     data.createOrReplaceTempView("data_table")
 
     val kllDf = spark.sql(
       s"""
       |SELECT
-      |  kll_sketch_double_get_min(kll_sketch_double_agg_build(value, 200)) AS min,
-      |  kll_sketch_double_get_max(kll_sketch_double_agg_build(value, 200)) AS max
+      |  kll_sketch_double_get_min(kll_sketch_double_agg_build(value, ${k})) AS min,
+      |  kll_sketch_double_get_max(kll_sketch_double_agg_build(value, ${k})) AS max
       |FROM
       |  data_table
     """.stripMargin
@@ -150,7 +165,7 @@ class KllTest extends SparkSessionManager {
       |  kll_sketch_double_get_cdf(t.sketch, ${splitPoints}, false) AS cdf_exclusive
       |FROM
       |  (SELECT
-      |     kll_sketch_double_agg_build(value, 200) sketch
+      |     kll_sketch_double_agg_build(value, ${k}) sketch
       |   FROM
       |     data_table) t
       """.stripMargin
@@ -167,6 +182,27 @@ class KllTest extends SparkSessionManager {
 
     val cdf_excl = Array[Double](0.2, 0.49, 1.0, 1.0)
     compareArrays(cdf_excl, pmfCdfResult.getAs[Seq[Double]]("cdf_exclusive").toArray)
+
+    // different query to avoid overloading a single example with too many results
+    val sketchInfo = spark.sql(
+      s"""
+      SELECT
+        kll_sketch_double_get_k(sketch) AS k,
+        kll_sketch_double_is_estimation_mode(sketch) AS estimation_mode,
+        kll_sketch_double_get_num_retained(sketch) AS num_retained,
+        kll_sketch_double_to_string(sketch) AS description
+      FROM
+        (SELECT
+           kll_sketch_double_agg_build(value, ${k}) sketch
+         FROM
+           data_table) t
+      """
+    ).head()
+
+    assert(sketchInfo.getAs[Integer]("k") == KllSketch.DEFAULT_K)
+    assert(sketchInfo.getAs[Boolean]("estimation_mode") == false)
+    assert(sketchInfo.getAs[Integer]("num_retained") == n)
+    assert(sketchInfo.getAs[String]("description").trim().startsWith("### Kll"))
   }
 
   test("KLL Doubles Merge via Scala") {

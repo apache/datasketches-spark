@@ -28,6 +28,7 @@ import org.apache.spark.sql.datasketches.kll.expressions.{KllDoublesSketchGetMin
                                                           KllDoublesSketchGetCdf,
                                                           KllDoublesSketchGetNumRetained,
                                                           KllDoublesSketchGetK,
+                                                          KllDoublesSketchToString,
                                                           KllDoublesSketchIsEstimationMode}
 
 object KllFunctionRegistry extends DatasketchesFunctionRegistry {
@@ -39,6 +40,7 @@ object KllFunctionRegistry extends DatasketchesFunctionRegistry {
     expression[KllDoublesSketchGetPmf]("kll_sketch_double_get_pmf"),
     expression[KllDoublesSketchGetCdf]("kll_sketch_double_get_cdf"),
     expression[KllDoublesSketchGetK]("kll_sketch_double_get_k"),
+    expression[KllDoublesSketchToString]("kll_sketch_double_to_string"),
     expression[KllDoublesSketchGetNumRetained]("kll_sketch_double_get_num_retained"),
     expression[KllDoublesSketchIsEstimationMode]("kll_sketch_double_is_estimation_mode"),
   )

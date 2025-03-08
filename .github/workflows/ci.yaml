@@ -63,19 +63,10 @@ jobs:
           echo Scala version: $SCALA_VERSION
           echo Spark version: $SPARK_VERSION
 
-      - name: Build and test
+      - name: Build and test interpreted path
         run: >
-          sbt ++$SCALA_VERSION --batch clean test
+          CODEGEN_FACTORYMODE=NO_CODEGEN sbt ++$SCALA_VERSION --batch clean test
 
-      - name: Build and test with Codegen
+      - name: Build and test codegen path
         run: >
-          FORCE_CODEGEN=true sbt ++$SCALA_VERSION --batch clean test
-
-
-# Architecture options: x86, x64, armv7, aarch64, ppc64le
-# setup-java@v4 has a "with cache" option
-# Lifecycle: validate, compile, test, package, verify, install, deploy
-# -B batch mode, never stops for user input
-# -V show Version without stopping
-# -X debug mode
-# -q quiet, only show errors
+          CODEGEN_FACTORYMODE=ONLY_CODEGEN sbt ++$SCALA_VERSION --batch clean test

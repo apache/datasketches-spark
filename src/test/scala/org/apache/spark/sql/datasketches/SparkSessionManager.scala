@@ -31,10 +31,11 @@ trait SparkSessionManager extends AnyFunSuite with BeforeAndAfterAll {
   Logger.getRootLogger().setLevel(Level.OFF)
 
   lazy val spark: SparkSession = {
-    // environment variable to force codegen for testing
-    // FORCE_CODEGEN means allow only codegen
-    // no argument means to use Spark's default (try codegen, fall back on error)
-    val forceCodegen = sys.env.getOrElse("FORCE_CODEGEN", "false").toBoolean
+    // environment variable to set codegen state
+    // FALLBACK: (default) try codegen else fall back to interpreted
+    // CODEGEN_ONLY: only use codegen path
+    // NO_CODEGEN: only use interpreted path
+    val codegenState = sys.env.getOrElse("CODEGEN_FACTORYMODE", "FALLBACK")
 
     val builder = SparkSession.builder()
     builder
@@ -42,14 +43,20 @@ trait SparkSessionManager extends AnyFunSuite with BeforeAndAfterAll {
       .master("local[1]")
       .config("spark.driver.bindAddress", "localhost")
       .config("spark.driver.host", "localhost")
+      .config("spark.sql.codegen.factoryMode", codegenState)
 
-    if (forceCodegen) {
+    // additional flags used for codegen state
+    if ("ONLY_CODEGEN".equals(codegenState)) {
       builder
         .config("spark.sql.codegen.wholeStage", "true")
         .config("spark.sql.codegen.fallback", "false")
+    } else if ("NO_CODEGEN".equals(codegenState)) {
+      builder
+        .config("spark.sql.codegen.wholeStage", "false")
+
     }
 
-    Logger.getRootLogger().info(s"Spark session started with codegen: $forceCodegen")
+    Logger.getRootLogger().info(s"Spark session started with codegen.factoryMode: $codegenState")
     builder.getOrCreate()
   }
 

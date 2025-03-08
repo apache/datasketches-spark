@@ -46,7 +46,7 @@ trait SparkSessionManager extends AnyFunSuite with BeforeAndAfterAll {
       .config("spark.sql.codegen.factoryMode", codegenState)
 
     // additional flags used for codegen state
-    if ("ONLY_CODEGEN".equals(codegenState)) {
+    if ("CODEGEN_ONLY".equals(codegenState)) {
       builder
         .config("spark.sql.codegen.wholeStage", "true")
         .config("spark.sql.codegen.fallback", "false")

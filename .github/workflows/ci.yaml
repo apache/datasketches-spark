@@ -69,4 +69,4 @@ jobs:
 
       - name: Build and test codegen path
         run: >
-          CODEGEN_FACTORYMODE=ONLY_CODEGEN sbt ++$SCALA_VERSION --batch clean test
+          CODEGEN_FACTORYMODE=CODEGEN_ONLY sbt ++$SCALA_VERSION --batch clean test

@@ -58,3 +58,10 @@ trait DatasketchesFunctionRegistry {
     (name, (expressionInfo, builder))
   }
 }
+
+// object for common functions
+object CommonFunctionRegistry extends DatasketchesFunctionRegistry {
+  override val expressions: Map[String, (ExpressionInfo, FunctionBuilder)] = Map(
+    expression[CastToBinary]("cast_to_binary"),
+  )
+}

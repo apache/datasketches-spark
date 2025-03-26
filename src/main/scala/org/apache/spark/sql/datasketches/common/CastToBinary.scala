@@ -25,12 +25,6 @@ import org.apache.spark.sql.catalyst.expressions.codegen.{CodeBlock, CodegenCont
 @ExpressionDescription(
   usage = """
     _FUNC_(expr) - Returns the input as a BinaryType (Array[Byte]). """
-/*    ,
-  examples = """
-    Examples:
-      > SELECT _FUNC_(kll_sketch_agg(col)) FROM VALUES (1.0), (2.0), (3.0) tab(col);
-       1.0
-  """*/
   //group = "misc_funcs",
 )
 case class CastToBinary(sketchExpr: Expression)
@@ -43,7 +37,7 @@ case class CastToBinary(sketchExpr: Expression)
     copy(sketchExpr = newChild)
   }
 
-  override def prettyName: String = "sketch_to_binary_converter"
+  override def prettyName: String = "cast_to_binary"
 
   override def inputTypes: Seq[AbstractDataType] = Seq(AnyDataType)
 

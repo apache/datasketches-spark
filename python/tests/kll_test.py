@@ -15,9 +15,10 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from pyspark.sql.types import StructType, StructField, DoubleType, IntegerType
+from pyspark.sql.types import StructType, StructField, BinaryType, DoubleType, IntegerType
 
-from datasketches import kll_doubles_sketch
+#from datasketches import kll_doubles_sketch
+from datasketches_spark.common import cast_to_binary
 from datasketches_spark.kll import *
 
 def test_kll_build(spark):
@@ -44,6 +45,14 @@ def test_kll_build(spark):
   assert(sk.get_max_value() == result["max"])
   assert(sk.get_pmf([25000, 30000, 75000]) == result["pmf"])
   assert(sk.get_cdf([20000, 50000, 95000], False) == result["cdf"])
+
+  df_types = df_agg.select(
+    "sketch",
+    cast_to_binary("sketch").alias("asBinary")
+  )
+  assert(df_types.schema["sketch"].dataType == KllDoublesSketchUDT())
+  assert(df_types.schema["asBinary"].dataType == BinaryType())
+
 
 def test_kll_merge(spark):
   n = 75 # stay in exact mode

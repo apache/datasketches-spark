@@ -17,10 +17,12 @@
 
 from pyspark import SparkContext
 from pyspark.sql.column import Column, _to_java_column, _to_seq, _create_column_from_literal
+from pyspark.sql.utils import try_remote_functions
 from py4j.java_gateway import JavaClass
 from typing import Any, TypeVar, Union, Callable
 from functools import lru_cache
 from ._version import __version__
+
 
 import os
 from importlib.resources import files, as_file
@@ -118,3 +120,17 @@ def _array_as_java_column(data: Union[list, tuple]) -> Column:
     col = _to_seq(sc, [_create_column_from_literal(x) for x in data])
     return _invoke_function(_get_spark_functions_class(), "array", col)._jc
     #return _invoke_function(_get_spark_functions_class(), "array", _to_seq(sc, [_create_column_from_literal(x) for x in data]))._jc
+
+
+_common_functions_class: JavaClass = None
+
+def _get_common_functions_class() -> JavaClass:
+    global _common_functions_class
+    if _common_functions_class is None:
+        _common_functions_class = _get_jvm_class("org.apache.spark.sql.datasketches.common.functions")
+    return _common_functions_class
+
+
+@try_remote_functions
+def cast_to_binary(col: "ColumnOrName") -> Column:
+    return _invoke_function_over_columns(_get_common_functions_class(), "cast_to_binary", col)

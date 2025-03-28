@@ -21,11 +21,11 @@ import org.apache.spark.sql.Column
 
 object functions extends DatasketchesScalaFunctionBase {
 
-  def cast_to_binary(expr: Column): Column = withExpr {
+  def cast_as_binary(expr: Column): Column = withExpr {
     new CastAsBinary(expr.expr)
   }
 
-  def sketch_to_binary(columnName: String): Column = {
-    cast_to_binary(Column(columnName))
+  def sketch_as_binary(columnName: String): Column = {
+    cast_as_binary(Column(columnName))
   }
 }

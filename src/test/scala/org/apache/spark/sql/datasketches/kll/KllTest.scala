@@ -178,7 +178,7 @@ class KllTest extends SparkSessionManager {
       s"""
       |SELECT
       |  kll_sketch_double_agg_build(value, 200) AS sketch,
-      |  cast_to_binary(kll_sketch_double_agg_build(value, 200)) AS asBinary
+      |  cast_as_binary(kll_sketch_double_agg_build(value, 200)) AS asBinary
       |FROM
       |  data_table
       """.stripMargin

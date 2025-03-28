@@ -27,17 +27,17 @@ import org.apache.spark.sql.catalyst.expressions.codegen.{CodeBlock, CodegenCont
     _FUNC_(expr) - Returns the input as a BinaryType (Array[Byte]). """
   //group = "misc_funcs",
 )
-case class CastToBinary(sketchExpr: Expression)
+case class CastAsBinary(sketchExpr: Expression)
  extends UnaryExpression
  with ExpectsInputTypes {
 
   override def child: Expression = sketchExpr
 
-  override protected def withNewChildInternal(newChild: Expression): CastToBinary = {
+  override protected def withNewChildInternal(newChild: Expression): CastAsBinary = {
     copy(sketchExpr = newChild)
   }
 
-  override def prettyName: String = "cast_to_binary"
+  override def prettyName: String = "cast_as_binary"
 
   override def inputTypes: Seq[AbstractDataType] = Seq(AnyDataType)
 

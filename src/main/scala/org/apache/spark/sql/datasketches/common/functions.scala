@@ -22,7 +22,7 @@ import org.apache.spark.sql.Column
 object functions extends DatasketchesScalaFunctionBase {
 
   def cast_to_binary(expr: Column): Column = withExpr {
-    new CastToBinary(expr.expr)
+    new CastAsBinary(expr.expr)
   }
 
   def sketch_to_binary(columnName: String): Column = {

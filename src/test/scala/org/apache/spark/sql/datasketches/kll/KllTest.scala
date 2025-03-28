@@ -26,7 +26,7 @@ import org.apache.datasketches.kll.KllDoublesSketch
 import org.apache.spark.sql.datasketches.kll.functions._
 import org.apache.spark.sql.datasketches.kll.types.KllDoublesSketchType
 import org.apache.spark.sql.datasketches.common.{SparkSessionManager, CommonFunctionRegistry}
-import org.apache.spark.sql.datasketches.common.functions.cast_to_binary
+import org.apache.spark.sql.datasketches.common.functions.cast_as_binary
 
 class KllTest extends SparkSessionManager {
   import spark.implicits._
@@ -118,7 +118,7 @@ class KllTest extends SparkSessionManager {
     val cdf_excl = Array[Double](0.2, 0.49, 1.0, 1.0)
     compareArrays(cdf_excl, pmfCdfResult.getAs[Seq[Double]]("cdf_exclusive").toArray)
 
-    val resultSchema = sketchDf.select($"sketch", cast_to_binary($"sketch").as("asBinary")).schema
+    val resultSchema = sketchDf.select($"sketch", cast_as_binary($"sketch").as("asBinary")).schema
     assert(resultSchema.apply("sketch").dataType.equals(KllDoublesSketchType))
     assert(resultSchema.apply("asBinary").dataType.equals(BinaryType))
   }
@@ -178,7 +178,7 @@ class KllTest extends SparkSessionManager {
       s"""
       |SELECT
       |  kll_sketch_double_agg_build(value, 200) AS sketch,
-      |  cast_to_binary(kll_sketch_double_agg_build(value, 200)) AS asBinary
+      |  cast_as_binary(kll_sketch_double_agg_build(value, 200)) AS asBinary
       |FROM
       |  data_table
       """.stripMargin

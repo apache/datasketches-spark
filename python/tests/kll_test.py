@@ -18,7 +18,7 @@
 from pyspark.sql.types import StructType, StructField, BinaryType, DoubleType, IntegerType
 
 #from datasketches import kll_doubles_sketch
-from datasketches_spark.common import cast_to_binary
+from datasketches_spark.common import cast_as_binary
 from datasketches_spark.kll import *
 
 def test_kll_build(spark):
@@ -48,7 +48,7 @@ def test_kll_build(spark):
 
   df_types = df_agg.select(
     "sketch",
-    cast_to_binary("sketch").alias("asBinary")
+    cast_as_binary("sketch").alias("asBinary")
   )
   assert(df_types.schema["sketch"].dataType == KllDoublesSketchUDT())
   assert(df_types.schema["asBinary"].dataType == BinaryType())

@@ -132,5 +132,5 @@ def _get_common_functions_class() -> JavaClass:
 
 
 @try_remote_functions
-def cast_to_binary(col: "ColumnOrName") -> Column:
-    return _invoke_function_over_columns(_get_common_functions_class(), "cast_to_binary", col)
+def cast_as_binary(col: "ColumnOrName") -> Column:
+    return _invoke_function_over_columns(_get_common_functions_class(), "cast_as_binary", col)

@@ -24,7 +24,7 @@ import org.apache.spark.sql.types.SQLUserDefinedType
 @SQLUserDefinedType(udt = classOf[ThetaSketchType])
 class ThetaSketchWrapper(var updateSketch: Option[UpdateSketch] = None, var compactSketch: Option[CompactSketch] = None, var union: Option[Union] = None) {
 
-  def serialize: Array[Byte] = {
+  def serialize(): Array[Byte] = {
     if (updateSketch.isDefined) return updateSketch.get.compact().toByteArrayCompressed
     else if (compactSketch.isDefined) return compactSketch.get.toByteArrayCompressed
     else if (union.isDefined) return union.get.getResult.toByteArrayCompressed
@@ -35,12 +35,13 @@ class ThetaSketchWrapper(var updateSketch: Option[UpdateSketch] = None, var comp
     if (updateSketch.isDefined) return updateSketch.get.toString
     else if (compactSketch.isDefined) return compactSketch.get.toString
     else if (union.isDefined) return union.get.toString
-    ""
+    "NULL"
   }
 }
 
 object ThetaSketchWrapper {
   def deserialize(bytes: Array[Byte]): ThetaSketchWrapper = {
+    if (bytes == null) return new ThetaSketchWrapper()
     new ThetaSketchWrapper(compactSketch = Some(CompactSketch.heapify(Memory.wrap(bytes))))
   }
 

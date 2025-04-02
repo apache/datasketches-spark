@@ -63,8 +63,12 @@ case class ThetaSketchGetEstimate(child: Expression)
     val sketch = ctx.freshName("sketch")
     val code = s"""
       ${childEval.code}
-      final org.apache.datasketches.theta.Sketch $sketch = org.apache.spark.sql.datasketches.theta.types.ThetaSketchWrapper.wrapAsReadOnlySketch(${childEval.value});
-      final double ${ev.value} = $sketch.getEstimate();
+      if (${childEval.isNull}) {
+        ${ev.value} = null;
+      } else {
+        final org.apache.datasketches.theta.Sketch $sketch = org.apache.spark.sql.datasketches.theta.types.ThetaSketchWrapper.wrapAsReadOnlySketch(${childEval.value});
+        ${ev.value} = $sketch.getEstimate();
+      }
     """
     ev.copy(code = CodeBlock(Seq(code), Seq.empty), isNull = childEval.isNull)
   }

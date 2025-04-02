@@ -58,9 +58,10 @@ import org.apache.datasketches.thetacommon.ThetaUtil.DEFAULT_UPDATE_SEED
 // scalastyle:on line.size.limit
 case class ThetaSketchAggBuild(
     inputExpr: Expression,
-    lgKExpr: Expression,
-    seedExpr: Expression,
-    pExpr: Expression,
+    lgKExpr: Expression = Literal(DEFAULT_LG_K),
+    seedExpr: Expression = Literal(DEFAULT_UPDATE_SEED),
+    pExpr: Expression = Literal(1f),
+    nullable: Boolean = true,
     mutableAggBufferOffset: Int = 0,
     inputAggBufferOffset: Int = 0)
   extends TypedImperativeAggregate[ThetaSketchWrapper]
@@ -98,7 +99,7 @@ case class ThetaSketchAggBuild(
   override def third: Expression = seedExpr
   override def fourth: Expression = pExpr
 
-  def this(inputExpr: Expression, lgKExpr: Expression, seedExpr: Expression, pExpr: Expression) = this(inputExpr, lgKExpr, seedExpr, pExpr, 0, 0)
+  def this(inputExpr: Expression, lgKExpr: Expression, seedExpr: Expression, pExpr: Expression) = this(inputExpr, lgKExpr, seedExpr, pExpr, true, 0, 0)
   def this(inputExpr: Expression, lgKExpr: Expression, seedExpr: Expression) = this(inputExpr, lgKExpr, seedExpr, Literal(1f))
   def this(inputExpr: Expression, lgKExpr: Expression) = this(inputExpr, lgKExpr, Literal(DEFAULT_UPDATE_SEED))
   def this(inputExpr: Expression) = this(inputExpr, Literal(DEFAULT_LG_K))
@@ -106,6 +107,7 @@ case class ThetaSketchAggBuild(
   def this(inputExpr: Expression, lgK: Int) = this(inputExpr, Literal(lgK))
   def this(inputExpr: Expression, lgK: Int, seed: Long) = this(inputExpr, Literal(lgK), Literal(seed))
   def this(inputExpr: Expression, lgK: Int, seed: Long, p: Float) = this(inputExpr, Literal(lgK), Literal(seed), Literal(p))
+  def this(inputExpr: Expression, lgK: Int, seed: Long, p: Float, nullable: Boolean) = this(inputExpr, Literal(lgK), Literal(seed), Literal(p), nullable)
 
   override def withNewMutableAggBufferOffset(newMutableAggBufferOffset: Int): ThetaSketchAggBuild =
     copy(mutableAggBufferOffset = newMutableAggBufferOffset)
@@ -121,16 +123,16 @@ case class ThetaSketchAggBuild(
 
   override def dataType: DataType = ThetaSketchType
 
-  override def nullable: Boolean = false
-
   override def inputTypes: Seq[AbstractDataType] = Seq(TypeCollection(NumericType, StringType), IntegerType, LongType, FloatType)
 
-  override def createAggregationBuffer(): ThetaSketchWrapper = new ThetaSketchWrapper(updateSketch
-    = Some(UpdateSketch.builder().setLogNominalEntries(lgK).setSeed(seed).setP(p).build()))
+  override def createAggregationBuffer(): ThetaSketchWrapper = new ThetaSketchWrapper()
 
   override def update(wrapper: ThetaSketchWrapper, input: InternalRow): ThetaSketchWrapper = {
     val value = inputExpr.eval(input)
     if (value != null) {
+      if (wrapper.updateSketch.isEmpty) {
+        wrapper.updateSketch = Some(UpdateSketch.builder().setLogNominalEntries(lgK).setSeed(seed).setP(p).build())
+      }
       inputExpr.dataType match {
         case DoubleType => wrapper.updateSketch.get.update(value.asInstanceOf[Double])
         case FloatType => wrapper.updateSketch.get.update(value.asInstanceOf[Float])
@@ -145,13 +147,9 @@ case class ThetaSketchAggBuild(
   }
 
   override def merge(wrapper: ThetaSketchWrapper, other: ThetaSketchWrapper): ThetaSketchWrapper = {
-    if (other != null && !other.compactSketch.get.isEmpty()) {
+    if (other.compactSketch.isDefined) {
       if (wrapper.union.isEmpty) {
         wrapper.union = Some(SetOperation.builder().setLogNominalEntries(lgK).setSeed(seed).setP(p).buildUnion())
-        if (wrapper.compactSketch.isDefined) {
-          wrapper.union.get.union(wrapper.compactSketch.get)
-          wrapper.compactSketch = None
-        }
       }
       wrapper.union.get.union(other.compactSketch.get)
     }
@@ -159,18 +157,17 @@ case class ThetaSketchAggBuild(
   }
 
   override def eval(wrapper: ThetaSketchWrapper): Any = {
-    if (wrapper == null || wrapper.union.isEmpty) {
-      null
-    } else {
-      wrapper.union.get.getResult.toByteArrayCompressed()
-    }
+    val result = wrapper.serialize()
+    if (result != null) return result
+    if (nullable) return null
+    UpdateSketch.builder().setSeed(seed).build().compact().toByteArrayCompressed()
   }
 
   override def serialize(wrapper: ThetaSketchWrapper): Array[Byte] = {
-    ThetaSketchType.serialize(wrapper)
+    wrapper.serialize
   }
 
   override def deserialize(bytes: Array[Byte]): ThetaSketchWrapper = {
-    ThetaSketchType.deserialize(bytes)
+    ThetaSketchWrapper.deserialize(bytes)
   }
 }

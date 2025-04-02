@@ -21,7 +21,7 @@ import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.catalyst.expressions.aggregate.AggregateFunction
 import org.apache.spark.sql.Column
 
-// this interfact provides a few helper methods defines and maps all the variants of each function invocation, analagous
+// this interface provides a few helper methods defines and maps all the variants of each function invocation, analagous
 // to the functions object in core Spark's org.apache.spark.sql.functions
 trait DatasketchesScalaFunctionBase {
   protected def withExpr(expr: => Expression): Column = Column(expr)

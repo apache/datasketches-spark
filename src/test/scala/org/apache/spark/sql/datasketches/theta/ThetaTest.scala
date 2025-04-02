@@ -23,9 +23,21 @@ import org.apache.spark.sql.datasketches.theta.functions._
 import org.apache.spark.sql.datasketches.theta.ThetaFunctionRegistry
 
 import org.scalatest.matchers.should.Matchers._
+import org.apache.spark.sql.datasketches.theta.types.ThetaSketchType
 
 class ThetaTest extends SparkSessionManager {
   import spark.implicits._
+
+  test("Theta Sketch build via Scala with defaults null input") {
+    val seq: Seq[Integer] = Seq(null, null, null, null, null, null, null, null, null, null)
+    val df = seq.toDF("value")
+
+    val sketchDf = df.agg(theta_sketch_agg_build("value").as("sketch"))
+    assert(sketchDf.head().getAs[ThetaSketchType]("sketch") == null)
+
+    val result: Row = sketchDf.select(theta_sketch_get_estimate("sketch").as("estimate")).head()
+    assert(result.getAs[Double]("estimate") == 0)
+  }
 
   test("Theta Sketch build via Scala with defaults") {
     val n = 100
